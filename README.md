@@ -33,6 +33,12 @@ Su fuente de verdad es `~/Documentos/Clase/Semestre_II/02_Matrices/Trigonometria
 Para publicar un cambio: `./sincronizar_taller.sh` (copia, agrega el «←» al índice, commitea y pushea;
 `--sin-push` solo copia).
 
+## Calculadora científica
+
+`public/calculadora/`: frontend propio sobre [libqalculate-wasm](https://github.com/stephtr/libqalculate-wasm) (GPL-3.0),
+copiado tal cual en `public/calculadora/qalc/` con la versión en el nombre. Para actualizar el motor:
+`npm pack libqalculate-wasm@<v>`, copiar `libqalculate.js`/`.wasm` con el nuevo nombre y cambiar la versión en `index.html`.
+
 ## Probar en local
 
 Crear `.dev.vars` (ignorado por git) con `TOOLS_PASSWORD=...` y `SESSION_SECRET=...`, y correr `npx wrangler dev`.

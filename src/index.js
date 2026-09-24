@@ -110,7 +110,8 @@ export default {
     if (!(await sesionValida(req, env))) return paginaEntrar(rutaSegura(url.pathname + url.search));
     const res = await env.ASSETS.fetch(req);
     const r = seguridad(res);
-    r.headers.set("Cache-Control", "private, no-store");
+    // el motor de la calculadora pesa 4 MB y lleva la versión en el nombre: se guarda en el navegador
+    r.headers.set("Cache-Control", url.pathname.endsWith(".wasm") ? "private, max-age=2592000, immutable" : "private, no-store");
     return r;
   },
 };
