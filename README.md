@@ -27,6 +27,12 @@ Sin los dos secretos el sitio no abre nada (responde 503).
 2. Copiar una tarjeta en `public/index.html` apuntando a `/<nombre>/`.
 3. Commit y push a `main`: Cloudflare (Workers Builds) despliega solo.
 
+## Taller de triángulos
+
+Su fuente de verdad es `~/Documentos/Clase/Semestre_II/02_Matrices/Trigonometria/Taller_Triangulos.html`.
+Para publicar un cambio: `./sincronizar_taller.sh` (copia, agrega el «←» al índice, commitea y pushea;
+`--sin-push` solo copia).
+
 ## Probar en local
 
 Crear `.dev.vars` (ignorado por git) con `TOOLS_PASSWORD=...` y `SESSION_SECRET=...`, y correr `npx wrangler dev`.
