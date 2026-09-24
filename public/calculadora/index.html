@@ -289,23 +289,24 @@ function insertar(txt) {
   recien = false;
   const s = entrada.selectionStart ?? entrada.value.length, e = entrada.selectionEnd ?? s;
   if ((txt === " " || txt === ")") && s === e && cierraExponente(s)) return entrada.setSelectionRange(s + 1, s + 1);
-  entrada.setRangeText(txt.endsWith("^") ? txt + "()" : txt, s, e, "end");
-  if (txt.endsWith("^")) mover(-1); // el exponente queda abierto: se escribe elevado hasta el espacio o →
+  const abre = txt.endsWith("^") || txt === "_"; // exponente o subíndice: queda abierto hasta el espacio o →
+  entrada.setRangeText(abre ? txt + "()" : txt, s, e, "end");
+  if (abre) mover(-1);
 }
-// ¿el «)» en la posición p cierra un exponente «^(…)»?
+// ¿el «)» en la posición p cierra un exponente «^(…)» o un subíndice «_(…)»?
 function cierraExponente(p) {
   const v = entrada.value;
   if (v[p] !== ")") return false;
   for (let i = p - 1, n = 0; i >= 0; i--) {
     if (v[i] === ")") n++;
-    else if (v[i] === "(" && n-- === 0) return v[i - 1] === "^";
+    else if (v[i] === "(" && n-- === 0) return v[i - 1] === "^" || v[i - 1] === "_";
   }
   return false;
 }
 function borrarAtras() {
   const v = entrada.value, s = entrada.selectionStart, e = entrada.selectionEnd;
   if (s !== e) return entrada.setRangeText("", s, e, "end");
-  if (v.slice(s - 2, s + 1) === "^()") return entrada.setRangeText("", s - 2, s + 1, "end");
+  if (/^[\^_]\(\)$/.test(v.slice(s - 2, s + 1))) return entrada.setRangeText("", s - 2, s + 1, "end");
   if (s > 0) entrada.setRangeText("", s - 1, s, "end");
 }
 function mover(d) { const p = Math.max(0, Math.min(entrada.value.length, entrada.selectionStart + d)); entrada.setSelectionRange(p, p); }
@@ -341,11 +342,14 @@ function arbol(s) {
     while (i < s.length && !(enGrupo && s[i] === ")")) {
       const c = s[i];
       if (c === "^") { const op = i++; out.push({ t: "pot", base: out.pop() || { t: "hueco", i: op }, op, exp: atomo() }); }
-      else if (c === "_") { // número_letras = unidad (20_s); todo lo demás es subíndice (a_1, 101_2, y mientras se escribe)
-        const op = i++, a = i; while (i < s.length && NOMBRE.test(s[i])) i++;
-        const base = out.pop() || { t: "hueco", i: op };
-        const unidad = base.t === "txt" && NUM.test(s[base.a]) && LETRA.test(s[a] || "");
-        out.push({ t: unidad ? "unidad" : "sub", base, op, sub: { t: "txt", a, b: i } });
+      else if (c === "_") { // número_unidad (20_s) se dibuja como unidad; todo lo demás es subíndice (a₁, 101₂, 20₂ₓ₋₁)
+        const op = i++, base = out.pop() || { t: "hueco", i: op };
+        let sub;
+        if (s[i] === "(") sub = atomo();
+        else { const a = i; while (i < s.length && NOMBRE.test(s[i])) i++; sub = { t: "txt", a, b: i }; }
+        const nombre = sub.t === "grupo" ? s.slice(sub.a + 1, sub.b ?? i) : s.slice(sub.a, sub.b);
+        const unidad = base.t === "txt" && NUM.test(s[base.a]) && esUnidad(nombre);
+        out.push({ t: unidad ? "unidad" : "sub", base, op, sub });
       }
       else if (c === "/" || c === "∕") { const op = i++; out.push({ t: "frac", num: out.pop() || { t: "hueco", i: op }, op, den: atomoConPotencia() }); }
       else out.push(atomo());
@@ -384,8 +388,8 @@ function dibujar(s, nodos) {
       }
       case "fn": return n(x.nombre) + n(x.arg);
       case "pot": return n(x.base) + oculto(x.op) + `<sup>${n(x.exp, true)}</sup>`;
-      case "sub": return n(x.base) + oculto(x.op) + `<sub>${n(x.sub)}</sub>`;
-      case "unidad": return n(x.base) + oculto(x.op) + `<span class="unid">${n(x.sub)}</span>`;
+      case "sub": return n(x.base) + oculto(x.op) + `<sub>${n(x.sub, true)}</sub>`;
+      case "unidad": return n(x.base) + oculto(x.op) + `<span class="unid">${n(x.sub, true)}</span>`;
       case "frac": return `<span class="frac"><span>${n(x.num, true)}${oculto(x.op)}</span><span>${n(x.den, true)}</span></span>`;
     }
   };
@@ -466,8 +470,34 @@ function evaluar(expr) {
 
 // ponytail: Ans = la expresión anterior entre paréntesis (se recalcula exacta); se anida si encadenas muchos Ans.
 let ans = leer("calc-ans", "0"), ultimo = "";
-const conAns = s => s.replace(/\bans\b/gi, `(${ans})`)
-  .replace(/(?<![\p{L}\p{N}_.,])(\d[\d.,]*)_(\d+)(?![\p{L}\p{N}])/gu, 'base("$1"; $2)');
+const conAns = s => subindices(s.replace(/\bans\b/gi, `(${ans})`));
+
+// ¿el nombre es una unidad? Se le pregunta al motor: en su HTML las unidades salen en verde (#BBFFBB)
+const unidades = new Map();
+function esUnidad(n) {
+  if (!q || !/^[\p{L}°][\p{L}\p{N}°/]*$/u.test(n)) return false;
+  if (!unidades.has(n)) unidades.set(n, /#BBFFBB/i.test(q.calculate(n, 300, 0).input));
+  return unidades.get(n);
+}
+// Qalculate no tiene subíndices (lee «20_(2x-1)» como 20·(2x−1) y «101_2» como 1012). Aquí significan:
+// número_unidad → cantidad (20_s) · número_expresión → número en esa base (101₂ = 5, 20₂ₓ₋₁) · nombre_índice → variable a_1
+function subindices(s) {
+  let out = "";
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] !== "_") { out += s[i]; continue; }
+    let j = i + 1, idx;
+    if (s[j] === "(") { let n = 0; for (; j < s.length; j++) { if (s[j] === "(") n++; else if (s[j] === ")" && --n === 0) break; } idx = s.slice(i + 2, j); j++; }
+    else { while (j < s.length && /[\p{L}\p{N}]/u.test(s[j])) j++; idx = s.slice(i + 1, j); }
+    const m = out.match(/(?<![\p{L}\p{N}_.,])(\d[\d.,]*)$/u);
+    if (!idx.trim()) { i = j - 1; continue; }
+    if (m && esUnidad(idx.trim())) out += "_" + idx.trim();
+    else if (m) out = out.slice(0, -m[1].length) + `base("${m[1]}"; (${idx}))`;
+    else if (/^[\p{L}\p{N}]+$/u.test(idx)) out += "_" + idx;
+    else out += "_(" + idx + ")";
+    i = j - 1;
+  }
+  return out;
+}
 let hist = leer("calc-historial", []), pos = hist.length;
 function calcular(crudo = entrada.value.trim(), alHistorial = true) {
   if (!crudo || !q) return;
