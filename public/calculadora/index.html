@@ -39,7 +39,7 @@
   .marca b { font: 800 17px/1 Arial, sans-serif; letter-spacing: .06em; color: #c9cad4; }
   .marca i { font: italic 15px Georgia, serif; color: #c9cad4; }
   .lema { text-align: center; color: #e0617a; font: 600 13px Arial, sans-serif; letter-spacing: .25em; margin: 8px 0 12px; }
-  .lcd { background: #c7d0bd; border-radius: 6px; border: 7px solid #26283a; padding: 4px 10px 8px; color: #1c2218; box-shadow: inset 0 2px 6px rgba(0,0,0,.35); font-family: ui-monospace, "DejaVu Sans Mono", Menlo, monospace; }
+  .lcd { cursor: text; background: #c7d0bd; border-radius: 6px; border: 7px solid #26283a; padding: 4px 10px 8px; color: #1c2218; box-shadow: inset 0 2px 6px rgba(0,0,0,.35); font-family: ui-monospace, "DejaVu Sans Mono", Menlo, monospace; }
   .ind { display: flex; gap: 10px; font: 700 10px Arial, sans-serif; height: 13px; }
   .ind span { opacity: .12; } .ind span.on { opacity: 1; }
   .ind .fijo { opacity: 1; } .ind .fijo:first-of-type { margin-left: auto; }
@@ -341,10 +341,11 @@ function arbol(s) {
     while (i < s.length && !(enGrupo && s[i] === ")")) {
       const c = s[i];
       if (c === "^") { const op = i++; out.push({ t: "pot", base: out.pop() || { t: "hueco", i: op }, op, exp: atomo() }); }
-      else if (c === "_") { // tras un número, «_» pega la unidad (20_s); tras un nombre, es subíndice (a_1)
+      else if (c === "_") { // número_letras = unidad (20_s); todo lo demás es subíndice (a_1, 101_2, y mientras se escribe)
         const op = i++, a = i; while (i < s.length && NOMBRE.test(s[i])) i++;
         const base = out.pop() || { t: "hueco", i: op };
-        out.push({ t: base.t === "txt" && NUM.test(s[base.a]) ? "unidad" : "sub", base, op, sub: { t: "txt", a, b: i } });
+        const unidad = base.t === "txt" && NUM.test(s[base.a]) && LETRA.test(s[a] || "");
+        out.push({ t: unidad ? "unidad" : "sub", base, op, sub: { t: "txt", a, b: i } });
       }
       else if (c === "/" || c === "∕") { const op = i++; out.push({ t: "frac", num: out.pop() || { t: "hueco", i: op }, op, den: atomoConPotencia() }); }
       else out.push(atomo());
@@ -416,12 +417,12 @@ function pintarVista() {
   c.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 (function bucle() { pintarVista(); requestAnimationFrame(bucle); })(); // barato: solo redibuja si algo cambió
-vista.addEventListener("click", ev => {
+document.querySelector(".lcd").addEventListener("click", ev => { // toda la pantalla, no solo la línea
   if (entrada.disabled) return;
-  const el = ev.target.closest("[data-i]");
+  const el = ev.target.closest("#vista [data-i]");
   let k = entrada.value.length;
   if (el) { const r = el.getBoundingClientRect(); k = +el.dataset.i + (ev.clientX > r.left + r.width / 2 ? 1 : 0); }
-  else if (ev.target.closest("[data-h]")) k = +ev.target.closest("[data-h]").dataset.h;
+  else if (ev.target.closest("#vista [data-h]")) k = +ev.target.closest("#vista [data-h]").dataset.h;
   recien = false;
   entrada.focus(); entrada.setSelectionRange(k, k);
 });
@@ -465,7 +466,8 @@ function evaluar(expr) {
 
 // ponytail: Ans = la expresión anterior entre paréntesis (se recalcula exacta); se anida si encadenas muchos Ans.
 let ans = leer("calc-ans", "0"), ultimo = "";
-const conAns = s => s.replace(/\bans\b/gi, `(${ans})`);
+const conAns = s => s.replace(/\bans\b/gi, `(${ans})`)
+  .replace(/(?<![\p{L}\p{N}_.,])(\d[\d.,]*)_(\d+)(?![\p{L}\p{N}])/gu, 'base("$1"; $2)');
 let hist = leer("calc-historial", []), pos = hist.length;
 function calcular(crudo = entrada.value.trim(), alHistorial = true) {
   if (!crudo || !q) return;
