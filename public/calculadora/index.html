@@ -5,20 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Calculadora científica</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#34364a">
+<link rel="icon" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-192.png">
 <script>(function(){var t=null;try{t=localStorage.getItem("obsedium-tema")}catch(e){}if(t==="oscuro"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.tema="oscuro"})();</script>
 <style>
-  :root { --fondo: #f6f4ef; --panel: #ffffff; --borde: #ddd8cb; --texto: #1d1d1b; --suave: #6b675e; --acento: #2f5da8; }
-  :root[data-tema="oscuro"] { --fondo: #15161a; --panel: #1e2025; --borde: #363940; --texto: #e7e5e0; --suave: #a29e95; --acento: #7ea6e6; color-scheme: dark; }
+  :root { --ancho-calc: 430px; --fondo: #f6f4ef; --panel: #ffffff; --borde: #ddd8cb; --texto: #1d1d1b; --suave: #6b675e; --acento: #2f5da8; --campo: #fbfaf7; }
+  :root[data-tema="oscuro"] { --fondo: #15161a; --panel: #1e2025; --borde: #363940; --texto: #e7e5e0; --suave: #a29e95; --acento: #7ea6e6; --campo: #24272c; color-scheme: dark; }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
   header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: var(--panel); border-bottom: 1px solid var(--borde); }
   h1 { font-size: 17px; margin: 0; }
   h1 a { color: inherit; text-decoration: none; }
   #b-tema { margin-left: auto; font-size: 15px; padding: 4px 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); cursor: pointer; }
+
+  /* barra de menús, como la de Qalculate de escritorio */
+  .barra { display: flex; justify-content: center; gap: 4px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--borde); overflow-x: auto; scrollbar-width: thin; }
+  .barra button { flex: none; display: flex; align-items: center; gap: 6px; border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+  .barra button:hover, .barra button:focus-visible { border-color: var(--borde); background: var(--fondo); outline: none; }
+  .barra b { font-weight: 400; color: var(--suave); font-family: ui-monospace, monospace; }
   main { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; align-items: flex-start; padding: 22px 16px; }
 
   /* el cuerpo de la calculadora (inspirado en la fx-82MS) */
-  .casio { width: 100%; max-width: 430px; background: linear-gradient(#45475c, #34364a); border-radius: 28px 28px 42px 42px; padding: 18px 20px 26px; box-shadow: 0 12px 30px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.08); color: #e8e8ee; user-select: none; }
+  .casio { width: var(--ancho-calc); max-width: 100%; background: linear-gradient(#45475c, #34364a); border-radius: 28px 28px 42px 42px; padding: 18px 20px 26px; box-shadow: 0 12px 30px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.08); color: #e8e8ee; user-select: none; }
   .marca { display: flex; justify-content: space-between; align-items: baseline; padding: 0 6px; }
   .marca b { font: 800 17px/1 Arial, sans-serif; letter-spacing: .06em; color: #c9cad4; }
   .marca i { font: italic 15px Georgia, serif; color: #c9cad4; }
@@ -26,12 +38,34 @@
   .lcd { background: #c7d0bd; border-radius: 6px; border: 7px solid #26283a; padding: 4px 10px 8px; color: #1c2218; box-shadow: inset 0 2px 6px rgba(0,0,0,.35); font-family: ui-monospace, "DejaVu Sans Mono", Menlo, monospace; }
   .ind { display: flex; gap: 10px; font: 700 10px Arial, sans-serif; height: 13px; }
   .ind span { opacity: .12; } .ind span.on { opacity: 1; }
-  .ind .ang { margin-left: auto; opacity: 1; }
-  #entrada { width: 100%; border: 0; background: transparent; color: inherit; font: 20px/1.3 ui-monospace, "DejaVu Sans Mono", Menlo, monospace; padding: 2px 0; outline: none; caret-color: #1c2218; }
-  #resultado { min-height: 38px; text-align: right; font-size: 27px; line-height: 38px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
-  #resultado.chico { font-size: 13px; line-height: 1.3; white-space: normal; text-align: left; padding-top: 4px; }
+  .ind .fijo { opacity: 1; } .ind .fijo:first-of-type { margin-left: auto; }
+  /* el <input> guarda el texto real (lo que va a Qalculate); encima se dibuja la vista 2D con su propio cursor */
+  .editor { position: relative; }
+  #entrada { position: absolute; inset: 0; width: 100%; opacity: 0; pointer-events: none; border: 0; font-size: 16px; }
+  #vista { min-height: 32px; padding: 3px 0; font: 20px/1.3 ui-monospace, "DejaVu Sans Mono", Menlo, monospace; white-space: pre; overflow-x: auto; scrollbar-width: none; cursor: text; display: flex; align-items: center; }
+  #vista > span { flex: none; }
+  #vista.sel .raiz { background: rgba(28, 34, 24, .16); border-radius: 3px; }
+  #vista .vacia { opacity: .45; }
+  #resultado .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 3px; font-size: .75em; line-height: 1.1; }
+  #resultado .frac > span:first-child { border-bottom: 2px solid currentColor; }
+  #resultado sup { font-size: .6em; vertical-align: .8em; line-height: 1; }
+  #resultado .hueco { display: none; }
+  #vista sup { font-size: .68em; vertical-align: .75em; line-height: 1; }
+  #vista sub { font-size: .68em; vertical-align: -.3em; line-height: 1; }
+  #vista .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 2px; font-size: .9em; line-height: 1.15; }
+  #vista .frac > span { padding: 0 3px; }
+  #vista .frac > span:first-child { border-bottom: 1.5px solid currentColor; }
+  .unid { margin-left: .3em; font-style: normal; text-decoration: underline dotted; text-underline-offset: .2em; }
+  #vista .hueco { display: inline-block; width: .55em; height: .8em; border: 1px dashed currentColor; opacity: .55; vertical-align: -.05em; }
+  #vista .cursor { display: inline-block; width: 0; border-left: 2px solid currentColor; margin-right: -2px; height: 1.1em; vertical-align: -.2em; animation: parpadeo 1s steps(1) infinite; }
+  #vista:not(.activo) .cursor { opacity: .35; animation: none; }
+  @keyframes parpadeo { 50% { opacity: 0; } }
+  #resultado { min-height: 42px; display: flex; align-items: center; font-size: 27px; line-height: 1.25; white-space: pre; overflow-x: auto; scrollbar-width: none; }
+  #resultado > .raiz { margin-left: auto; flex: none; } /* margen en vez de justify-content: así se puede desplazar si es largo */
+  #resultado.chico { font-size: 14px; white-space: pre-wrap; padding-top: 4px; }
+  #resultado.chico > .raiz { margin-left: 0; flex: 1; }
   #aviso { min-height: 15px; font: 11px/1.3 Arial, sans-serif; color: #5b3a1a; }
-  .lcd span, .hist span { color: inherit !important; }
+  .lcd span, .hist span, .bases span { color: inherit !important; }
   .lcd sup, .hist sup { font-size: .6em; }
 
   .teclas { display: grid; gap: 10px 8px; margin-top: 16px; }
@@ -39,7 +73,7 @@
   .n5 { grid-template-columns: repeat(5, 1fr); margin-top: 18px; gap: 14px 10px; }
   .t { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 1px; }
   .t small { font: 600 9.5px/1 Arial, sans-serif; color: #e0a33a; text-align: center; min-height: 10px; white-space: nowrap; }
-  .t button { font: 600 14px Arial, sans-serif; border: 0; border-radius: 7px; padding: 7px 0; cursor: pointer; background: #22232f; color: #f2f2f5; box-shadow: 0 3px 0 #111219, inset 0 1px 0 rgba(255,255,255,.12); touch-action: manipulation; }
+  .t button { font: 600 14px Arial, sans-serif; border: 0; border-radius: 7px; padding: 7px 0; cursor: pointer; background: #22232f; color: #f2f2f5; box-shadow: 0 3px 0 #111219, inset 0 1px 0 rgba(255,255,255,.12); touch-action: manipulation; white-space: nowrap; overflow: hidden; }
   .t button:active { transform: translateY(2px); box-shadow: 0 1px 0 #111219; }
   .t button:focus-visible { outline: 2px solid #e0a33a; }
   .ctrl button { background: #c3c4cf; color: #2a2b38; border-radius: 12px; font-size: 11.5px; box-shadow: 0 3px 0 #7c7d8a; }
@@ -48,19 +82,63 @@
   .n5 .ope button { font-size: 16px; }
   .casio.shift [data-s] button { outline: 2px solid #e0a33a; outline-offset: -2px; }
   .casio.shift .k-shift button, .casio.hyp .k-hyp button { background: #e0a33a; color: #1d1d1b; }
+  .casio.sin-teclado .teclas { display: none; }
 
   /* cinta de historial, como en Qalculate de escritorio */
-  .cinta { width: 100%; max-width: 430px; background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; }
+  .cinta { width: var(--ancho-calc); max-width: 100%; align-self: stretch; background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 12px 14px; }
   .cinta h2 { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin: 0 0 6px; }
-  .cinta h2 button { font-size: 12px; border: 1px solid var(--borde); background: transparent; color: var(--suave); border-radius: 7px; padding: 2px 8px; cursor: pointer; }
+  .chico-b { font-size: 12px; border: 1px solid var(--borde); background: transparent; color: var(--suave); border-radius: 7px; padding: 2px 8px; cursor: pointer; }
   .hist { list-style: none; margin: 0; padding: 0; max-height: 70vh; overflow-y: auto; }
   .hist li { border-top: 1px dashed var(--borde); padding: 6px 2px; cursor: pointer; }
   .hist li:hover { background: color-mix(in srgb, var(--acento) 8%, transparent); }
   .hist .e { color: var(--suave); font-size: 13.5px; }
   .hist .r { text-align: right; font-size: 17px; }
   .vacio { color: var(--suave); font-size: 13.5px; }
+  /* ventana angosta (o PWA ajustada a la calculadora): sin márgenes, solo la calculadora y la barra en íconos */
+  @media (max-width: 520px) {
+    main { padding: 0 0 16px; gap: 16px; }
+    .casio { border-radius: 0 0 28px 28px; }
+    .cinta { border-radius: 0; border-left: 0; border-right: 0; }
+    .barra { justify-content: space-between; padding: 6px 8px; gap: 0; }
+    .barra button span { display: none; }
+    .barra button { padding: 6px 7px; }
+    .barra b { font-size: 15px; }
+  }
+  @media (display-mode: standalone) { header { display: none; } }
+  #b-ajustar { display: none; }
+  @media (display-mode: standalone) { #b-ajustar { display: flex; } }
   .pie { width: 100%; text-align: center; color: var(--suave); font-size: 12px; }
   .pie a { color: inherit; }
+
+  /* ventanas de los menús */
+  dialog { width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 40px); padding: 0; border: 1px solid var(--borde); border-radius: 14px; background: var(--panel); color: var(--texto); box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  .d-cab { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--panel); z-index: 1; }
+  .d-cab h2 { font-size: 16px; margin: 0; }
+  .d-cab button { border: 0; background: transparent; font-size: 20px; cursor: pointer; color: var(--suave); }
+  #d-cuerpo { padding: 14px 16px 18px; }
+  .fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; }
+  .fila label { font-size: 14px; }
+  .fila select, .fila input { max-width: 58%; }
+  #d-cuerpo select, #d-cuerpo input, #d-cuerpo textarea { font-size: 14px; padding: 6px 8px; border: 1px solid var(--borde); border-radius: 7px; background: var(--campo); }
+  #d-cuerpo input[type=search], #d-cuerpo textarea, .ancho { width: 100%; }
+  .bot { display: inline-block; margin: 3px 4px 3px 0; padding: 6px 12px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); cursor: pointer; font-size: 13.5px; }
+  .bot:hover { border-color: var(--acento); }
+  .bot.pri { background: var(--acento); border-color: var(--acento); color: #fff; }
+  :root[data-tema="oscuro"] .bot.pri { color: #10131a; }
+  .nota { color: var(--suave); font-size: 12.5px; margin: 6px 0; }
+  .cat details { border-top: 1px solid var(--borde); }
+  .cat summary { cursor: pointer; padding: 7px 2px; font-weight: 600; font-size: 14px; }
+  .cat summary span { color: var(--suave); font-weight: 400; }
+  .item { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 5px 8px; border-radius: 7px; cursor: pointer; }
+  .item:hover, .item:focus-visible { background: color-mix(in srgb, var(--acento) 10%, transparent); outline: none; }
+  .item code { font-weight: 600; }
+  .item small { display: block; color: var(--suave); font-size: 12px; }
+  .bases { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .bases td { border-top: 1px solid var(--borde); padding: 6px 4px; font-size: 14px; }
+  .bases td:last-child { font-family: ui-monospace, monospace; text-align: right; word-break: break-all; }
+  #grafico svg { width: 100%; height: auto; display: block; margin-top: 10px; background: var(--campo); border: 1px solid var(--borde); border-radius: 8px; }
+  #grafico text { font: 11px system-ui, sans-serif; fill: var(--suave); }
   @media (max-width: 400px) { .casio { padding: 14px 12px 22px; border-radius: 20px 20px 30px 30px; } .f6 .t button { font-size: 12.5px; } .t small { font-size: 8.5px; } }
 </style>
 </head>
@@ -69,76 +147,162 @@
   <h1><a href="/" title="Volver a Obsedium Tools">← </a>Calculadora científica</h1>
   <button id="b-tema" title="Modo claro u oscuro" aria-label="Cambiar entre modo claro y oscuro"></button>
 </header>
+<nav class="barra" aria-label="Menús">
+  <button data-menu="modo" title="Modo" aria-label="Modo"><b aria-hidden="true">⚙</b><span>Modo</span></button>
+  <button data-menu="convertir" title="Convertir" aria-label="Convertir"><b aria-hidden="true">⇄</b><span>Convertir</span></button>
+  <button data-menu="guardar" title="Guardar" aria-label="Guardar"><b aria-hidden="true">▣</b><span>Guardar</span></button>
+  <button data-menu="funciones" title="Funciones" aria-label="Funciones"><b aria-hidden="true">fx</b><span>Funciones</span></button>
+  <button data-menu="unidades" title="Unidades" aria-label="Unidades"><b aria-hidden="true">▭</b><span>Unidades</span></button>
+  <button data-menu="graficar" title="Graficar" aria-label="Graficar"><b aria-hidden="true">⟋</b><span>Graficar</span></button>
+  <button data-menu="bases" title="Bases numéricas" aria-label="Bases numéricas"><b aria-hidden="true">01</b><span>Bases numéricas</span></button>
+  <button data-menu="teclado" title="Teclado" aria-label="Teclado"><b aria-hidden="true">⠿</b><span>Teclado</span></button>
+  <button data-menu="menu" title="Menú" aria-label="Menú"><b aria-hidden="true">☰</b><span>Menú</span></button>
+  <button id="b-ajustar" title="Ajustar el ancho de la ventana a la calculadora" aria-label="Ajustar ventana"><b aria-hidden="true">⇔</b><span>Ajustar</span></button>
+</nav>
 <main>
   <section class="casio" id="casio" aria-label="Calculadora">
     <div class="marca"><b>OBSEDIUM</b><i>fx-Qalc</i></div>
     <div class="lema">Q·A·L·C</div>
     <div class="lcd">
-      <div class="ind" aria-hidden="true"><span id="i-s">S</span><span id="i-h">hyp</span><span class="ang" id="i-ang">D</span></div>
-      <input id="entrada" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="Expresión (escribe o pega, Enter calcula)" placeholder="cargando motor…" disabled>
+      <div class="ind" aria-hidden="true"><span id="i-s">S</span><span id="i-h">hyp</span><span class="fijo" id="i-base"></span><span class="fijo" id="i-ang">D</span></div>
+      <div class="editor">
+        <input id="entrada" autocomplete="off" spellcheck="false" autocapitalize="off" aria-label="Expresión (escribe o pega, Enter calcula)" placeholder="cargando motor…" disabled>
+        <div id="vista" aria-hidden="true"></div>
+      </div>
       <div id="resultado" aria-live="polite">0</div>
       <div id="aviso"></div>
     </div>
+    <div class="teclas f6" id="teclas-ctrl"></div>
     <div class="teclas f6" id="teclas-f"></div>
     <div class="teclas n5" id="teclas-n"></div>
   </section>
   <section class="cinta">
-    <h2>Historial <button id="b-borrar">Borrar</button></h2>
+    <h2>Historial <button class="chico-b" id="b-borrar">Borrar</button></h2>
     <ul class="hist" id="hist"></ul>
   </section>
   <p class="pie">Motor: <a href="https://qalculate.github.io/" target="_blank" rel="noopener">Qalculate!</a> vía <a href="https://github.com/stephtr/libqalculate-wasm" target="_blank" rel="noopener">libqalculate-wasm</a> (GPL-3.0, <a href="qalc/LICENSE-GPL3.txt">licencia</a>). Acepta × * · como multiplicar, unidades (5 m to cm) y ecuaciones (2x+3=7).</p>
 </main>
+<dialog id="dlg">
+  <div class="d-cab"><h2 id="d-titulo"></h2><form method="dialog"><button aria-label="Cerrar">×</button></form></div>
+  <div id="d-cuerpo"></div>
+</dialog>
 <script src="qalc/libqalculate-0.0.6.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const entrada = $("entrada"), resultado = $("resultado"), aviso = $("aviso"), casio = $("casio");
 const leer = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
 const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const texto = html => { const d = document.createElement("div"); d.innerHTML = html; return d.textContent; };
+
+// ---- modo: [opción de qalc, etiqueta, valores, valor por defecto]. «resultado» no es de qalc: el wasm siempre
+// devuelve exacto y decimal juntos («1 + 3∕4 = 1,75», «2⋅√2 ≈ 2,83») y aquí se elige qué parte mostrar.
+const OPCIONES = [
+  ["angle", "Ángulo", [["2", "Grados"], ["1", "Radianes"], ["3", "Gradianes"]], "2"],
+  ["resultado", "Resultado", [["ambos", "Exacto y decimal"], ["exacto", "Exacto / fracción"], ["decimal", "Decimal"]], "ambos"],
+  ["scientific notation", "Notación", [["-1", "Normal"], ["3", "Científica"], ["-3", "Ingeniería"], ["1", "Pura"], ["0", "Simple (sin exponente)"]], "-1"],
+  ["precision", "Precisión (cifras significativas)", [2, 4, 6, 8, 10, 12, 15, 20, 30, 50].map(n => [String(n), String(n)]), "10"],
+  ["max decimals", "Decimales máximos", [["-1", "Sin límite"], ...[0, 1, 2, 3, 4, 5, 6, 8, 10].map(n => [String(n), String(n)])], "-1"],
+  ["min decimals", "Decimales mínimos", [["-1", "Ninguno"], ...[1, 2, 3, 4, 5, 6].map(n => [String(n), String(n)])], "-1"],
+  ["repeating decimals", "Decimales periódicos", [["1", "Marcar (0,142857…)"], ["0", "Redondear"]], "1"],
+  ["decimal comma", "Separador decimal", [["on", "Coma (1,5)"], ["off", "Punto (1.5)"]], "on"],
+  ["digit grouping", "Agrupar dígitos", [["0", "No"], ["1", "Sí (1 234 567)"]], "0"],
+  ["base", "Base del resultado", [["dec", "Decimal"], ["bin", "Binaria"], ["oct", "Octal"], ["hex", "Hexadecimal"], ["roman", "Romana"]], "dec"],
+  ["input base", "Base de entrada", [["dec", "Decimal"], ["bin", "Binaria"], ["oct", "Octal"], ["hex", "Hexadecimal"], ["roman", "Romana"]], "dec"],
+  ["algebra mode", "Álgebra", [["1", "Expandir"], ["2", "Factorizar"]], "1"],
+  ["complex form", "Números complejos", [["0", "Rectangular (a + bi)"], ["1", "Exponencial"], ["2", "Polar"], ["3", "cis"]], "0"],
+  ["autoconversion", "Conversión de unidades", [["1", "Óptima"], ["3", "Óptima SI"], ["2", "Unidades base"], ["0", "Ninguna"]], "1"],
+  ["prefixes", "Prefijos (5 km en vez de 5000 m)", [["on", "Sí"], ["off", "No"]], "on"],
+  ["parsing mode", "Sintaxis", [["0", "Adaptativa"], ["1", "Multiplicación implícita primero"], ["2", "Convencional"], ["3", "Encadenada (1+2×3 = 9)"]], "0"],
+];
+const MODO_BASE = Object.fromEntries(OPCIONES.map(o => [o[0], o[3]]));
+let modo = { ...MODO_BASE, ...leer("calc-modo", {}) };
+const coma = () => modo["decimal comma"] === "on";
 
 // ---- teclas: [etiqueta, qué inserta, etiqueta SHIFT, qué inserta con SHIFT, clase]
-// Las funciones de dos argumentos usan ";" porque la coma es el decimal.
-const F = [
+const CTRL = [
   ["SHIFT", "@shift", "", "", "ctrl k-shift"], ["DRG", "@drg", "", "", "ctrl"], ["◀", "@izq", "", "", "ctrl"],
   ["▶", "@der", "", "", "ctrl"], ["▲", "@arriba", "", "", "ctrl"], ["▼", "@abajo", "", "", "ctrl"],
-  ["x⁻¹", "^(−1)", "x!", "!"], ["nCr", "comb(", "nPr", "perm("], ["√", "√(", "∛", "cbrt("],
-  ["x²", "^2", "x³", "^3"], ["^", "^", "ˣ√", "root("], ["log", "log10(", "10ˣ", "10^"],
-  ["ln", "ln(", "eˣ", "e^"], ["(−)", "−"], ["hyp", "@hyp", "", "", "k-hyp"],
-  ["sin", "sin(", "sin⁻¹", "asin("], ["cos", "cos(", "cos⁻¹", "acos("], ["tan", "tan(", "tan⁻¹", "atan("],
-  ["(", "("], [")", ")"], [";", ";"], ["π", "π", "e", "e"], ["%", "%", "°", "°"], ["x", "x", "=", "="],
 ];
+const TECLADOS = {
+  general: ["General", [
+    ["x⁻¹", "^(−1)", "x!", "!"], ["nCr", "comb(", "nPr", "perm("], ["√", "√(", "∛", "cbrt("],
+    ["x²", "^2", "x³", "^3"], ["^", "^", "ˣ√", "root("], ["log", "log10(", "10ˣ", "10^"],
+    ["ln", "ln(", "eˣ", "e^"], ["unid", "@unidad", "(−)", "−"], ["hyp", "@hyp", "", "", "k-hyp"],
+    ["sin", "sin(", "sin⁻¹", "asin("], ["cos", "cos(", "cos⁻¹", "acos("], ["tan", "tan(", "tan⁻¹", "atan("],
+    ["(", "("], [")", ")"], [";", ";"], ["π", "π", "e", "e"], ["%", "%", "°", "°"], ["x", "x", "=", "="],
+  ]],
+  programacion: ["Programación", [
+    ["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["E", "E"], ["F", "F"],
+    ["AND", "&"], ["OR", "|"], ["XOR", " xor "], ["NOT", "~"], ["<<", "<<"], [">>", ">>"],
+    ["0x", "0x"], ["0b", "0b"], ["0o", "0o"], ["mod", " mod "], ["→hex", " to hex", "→bin", " to bin"], ["→dec", " to dec", "→oct", " to oct"],
+  ]],
+  algebra: ["Álgebra", [
+    ["x", "x"], ["y", "y"], ["z", "z"], ["=", "="], ["solve", "solve(", "multi", "multisolve("], ["factor", "factorize("],
+    ["d/dx", "diff(", "", ""], ["∫", "integrate("], ["lim", "limit("], ["Σ", "sum("], ["Π", "product("], ["expand", "expand("],
+    ["(", "("], [")", ")"], [";", ";"], ["[ ]", "["], ["]", "]"], ["|x|", "abs("],
+  ]],
+};
+let teclado = leer("calc-teclado", "general");
+if (!TECLADOS[teclado] && teclado !== "oculto") teclado = "general";
 const N = [
   ["7", "7"], ["8", "8"], ["9", "9"], ["DEL", "@del", "", "", "rojo"], ["AC", "@ac", "", "", "rojo"],
   ["4", "4"], ["5", "5"], ["6", "6"], ["×", "×", "", "", "ope"], ["÷", "/", "", "", "ope"],
   ["1", "1"], ["2", "2"], ["3", "3"], ["+", "+", "", "", "ope"], ["−", "−", "", "", "ope"],
-  ["0", "0"], [",", ",", "Rnd", "round("], ["EXP", "E", "Ran#", "rand()"], ["Ans", "Ans", "", "", "ope"], ["=", "@igual", "", "", "ope"],
+  ["0", "0"], [",", "@decimal", "Rnd", "round("], ["EXP", "E", "Ran#", "rand()"], ["Ans", "Ans", "", "", "ope"], ["=", "@igual", "", "", "ope"],
 ];
 function pintarTeclas(cont, lista) {
+  cont.replaceChildren();
   for (const [et, ins, set, sins, cls] of lista) {
     const d = document.createElement("div");
     d.className = "t " + (cls || "");
     if (sins) d.dataset.s = "";
     d.innerHTML = `<small></small><button type="button"></button>`;
     d.firstChild.textContent = set || "";
-    const b = d.lastChild; b.textContent = et;
+    const b = d.lastChild; b.textContent = ins === "@decimal" ? (coma() ? "," : "·") : et;
     b.addEventListener("pointerdown", e => e.preventDefault()); // no roba el foco: en el celular no abre el teclado
     b.onclick = () => tecla(ins, sins);
     cont.append(d);
   }
 }
-pintarTeclas($("teclas-f"), F);
-pintarTeclas($("teclas-n"), N);
+function pintarTeclados() {
+  casio.classList.toggle("sin-teclado", teclado === "oculto");
+  pintarTeclas($("teclas-ctrl"), CTRL);
+  pintarTeclas($("teclas-f"), (TECLADOS[teclado] || TECLADOS.general)[1]);
+  pintarTeclas($("teclas-n"), N);
+}
 
 let shift = false, hyp = false;
 function estado() {
   casio.classList.toggle("shift", shift); casio.classList.toggle("hyp", hyp);
   $("i-s").classList.toggle("on", shift); $("i-h").classList.toggle("on", hyp);
+  $("i-ang").textContent = { 2: "D", 1: "R", 3: "G" }[modo.angle];
+  $("i-base").textContent = { dec: "", bin: "BIN", oct: "OCT", hex: "HEX", roman: "ROM" }[modo.base];
 }
 let recien = false; // tras "=": un operador sigue desde Ans, cualquier otra cosa reemplaza (como la Casio)
 function insertar(txt) {
-  if (recien && /^[+−\-×*\/^!%]/.test(txt)) entrada.value = "Ans";
+  if (recien && /^[+−\-×*\/^!%&|<>]/.test(txt)) entrada.value = "Ans";
   recien = false;
   const s = entrada.selectionStart ?? entrada.value.length, e = entrada.selectionEnd ?? s;
-  entrada.setRangeText(txt, s, e, "end");
+  if ((txt === " " || txt === ")") && s === e && cierraExponente(s)) return entrada.setSelectionRange(s + 1, s + 1);
+  entrada.setRangeText(txt.endsWith("^") ? txt + "()" : txt, s, e, "end");
+  if (txt.endsWith("^")) mover(-1); // el exponente queda abierto: se escribe elevado hasta el espacio o →
+}
+// ¿el «)» en la posición p cierra un exponente «^(…)»?
+function cierraExponente(p) {
+  const v = entrada.value;
+  if (v[p] !== ")") return false;
+  for (let i = p - 1, n = 0; i >= 0; i--) {
+    if (v[i] === ")") n++;
+    else if (v[i] === "(" && n-- === 0) return v[i - 1] === "^";
+  }
+  return false;
+}
+function borrarAtras() {
+  const v = entrada.value, s = entrada.selectionStart, e = entrada.selectionEnd;
+  if (s !== e) return entrada.setRangeText("", s, e, "end");
+  if (v.slice(s - 2, s + 1) === "^()") return entrada.setRangeText("", s - 2, s + 1, "end");
+  if (s > 0) entrada.setRangeText("", s - 1, s, "end");
 }
 function mover(d) { const p = Math.max(0, Math.min(entrada.value.length, entrada.selectionStart + d)); entrada.setSelectionRange(p, p); }
 function tecla(ins, sins) {
@@ -149,27 +313,128 @@ function tecla(ins, sins) {
   if (hyp && /^a?(sin|cos|tan)\($/.test(txt)) { txt = txt.replace("(", "h("); hyp = false; }
   estado();
   switch (txt) {
-    case "@drg": return cambiarAngulo();
+    case "@drg": return cambiarModo("angle", { 2: "1", 1: "3", 3: "2" }[modo.angle]);
     case "@izq": return mover(-1);
     case "@der": return mover(1);
     case "@arriba": return navegar(-1);
     case "@abajo": return navegar(1);
-    case "@del": {
-      const s = entrada.selectionStart, e = entrada.selectionEnd;
-      return s !== e ? entrada.setRangeText("", s, e, "end") : s > 0 && entrada.setRangeText("", s - 1, s, "end");
-    }
+    case "@decimal": return insertar(coma() ? "," : ".");
+    case "@del": return borrarAtras();
     case "@ac": entrada.value = ""; resultado.textContent = "0"; resultado.classList.remove("chico"); aviso.textContent = ""; return;
     case "@igual": return calcular();
+    case "@unidad": return q ? MENUS.unidades() : null;
   }
   insertar(txt);
 }
 
+// ---- vista 2D del texto: x^(2) → x², a_1 → a₁, (2+2)/(x−4) → fracción. Solo dibuja: el texto no cambia.
+// Cada carácter lleva data-i (su posición en el texto) para poner el cursor y ubicar los clics.
+function arbol(s) {
+  let i = 0;
+  const LETRA = /[\p{L}°π∞]/u, NUM = /[\p{N}.,]/u, NOMBRE = /[\p{L}\p{N}°π∞]/u;
+  function secuencia(enGrupo) {
+    const out = [];
+    while (i < s.length && !(enGrupo && s[i] === ")")) {
+      const c = s[i];
+      if (c === "^") { const op = i++; out.push({ t: "pot", base: out.pop() || { t: "hueco", i: op }, op, exp: atomo() }); }
+      else if (c === "_") { // tras un número, «_» pega la unidad (20_s); tras un nombre, es subíndice (a_1)
+        const op = i++, a = i; while (i < s.length && NOMBRE.test(s[i])) i++;
+        const base = out.pop() || { t: "hueco", i: op };
+        out.push({ t: base.t === "txt" && NUM.test(s[base.a]) ? "unidad" : "sub", base, op, sub: { t: "txt", a, b: i } });
+      }
+      else if (c === "/" || c === "∕") { const op = i++; out.push({ t: "frac", num: out.pop() || { t: "hueco", i: op }, op, den: atomoConPotencia() }); }
+      else out.push(atomo());
+    }
+    return out;
+  }
+  function atomo() {
+    if (i >= s.length) return { t: "hueco", i };
+    const c = s[i], a = i;
+    if (c === "(") { i++; const hijos = secuencia(true); const b = s[i] === ")" ? i++ : null; return { t: "grupo", a, b, hijos }; }
+    if (NUM.test(c)) { while (i < s.length && NUM.test(s[i])) i++; return { t: "txt", a, b: i }; }
+    if (LETRA.test(c)) {
+      while (i < s.length && NOMBRE.test(s[i])) i++;
+      const nombre = { t: "txt", a, b: i };
+      return s[i] === "(" ? { t: "fn", nombre, arg: atomo() } : nombre;
+    }
+    i++; return { t: "txt", a, b: i };
+  }
+  function atomoConPotencia() {
+    let n = atomo();
+    while (s[i] === "^") { const op = i++; n = { t: "pot", base: n, op, exp: atomo() }; }
+    return n;
+  }
+  return secuencia(false);
+}
+function dibujar(s, nodos) {
+  const car = k => `<span data-i="${k}">${esc(s[k])}</span>`;
+  const oculto = k => k == null ? "" : `<span data-i="${k}"></span>`;
+  const n = (x, sinParentesis) => {
+    switch (x.t) {
+      case "txt": { let h = ""; for (let k = x.a; k < x.b; k++) h += car(k); return h || `<span class="hueco" data-h="${x.a}"></span>`; }
+      case "hueco": return `<span class="hueco" data-h="${x.i}"></span>`;
+      case "grupo": {
+        const dentro = x.hijos.map(h => n(h)).join("") || (sinParentesis ? `<span class="hueco" data-h="${x.a + 1}"></span>` : "");
+        return sinParentesis ? oculto(x.a) + dentro + oculto(x.b) : car(x.a) + dentro + (x.b != null ? car(x.b) : "");
+      }
+      case "fn": return n(x.nombre) + n(x.arg);
+      case "pot": return n(x.base) + oculto(x.op) + `<sup>${n(x.exp, true)}</sup>`;
+      case "sub": return n(x.base) + oculto(x.op) + `<sub>${n(x.sub)}</sub>`;
+      case "unidad": return n(x.base) + oculto(x.op) + `<span class="unid">${n(x.sub)}</span>`;
+      case "frac": return `<span class="frac"><span>${n(x.num, true)}${oculto(x.op)}</span><span>${n(x.den, true)}</span></span>`;
+    }
+  };
+  return nodos.map(x => n(x)).join("");
+}
+// el resultado de Qalculate (HTML con <sup>) pasa a texto «^(…)» y se dibuja igual que la entrada
+function dibujar2D(html) {
+  const t = texto(html.replace(/<sup>/g, "^(").replace(/<\/sup>/g, ")")).replace(/\u00a0/g, " ");
+  return dibujar(t, arbol(t));
+}
+const vista = $("vista");
+let pintado = "";
+function pintarVista() {
+  const v = entrada.value, s = entrada.selectionStart ?? v.length, e = entrada.selectionEnd ?? s;
+  const activo = document.activeElement === entrada;
+  const clave = `${v}\u0000${s}\u0000${e}\u0000${activo}`;
+  if (clave === pintado) return;
+  pintado = clave;
+  vista.classList.toggle("activo", activo);
+  vista.classList.toggle("sel", v.length > 0 && s === 0 && e === v.length);
+  if (!v) { vista.innerHTML = `<span class="raiz"><span class="cursor"></span>${entrada.disabled ? `<span class="vacia">${esc(entrada.placeholder)}</span>` : ""}</span>`; return; }
+  vista.innerHTML = `<span class="raiz">${dibujar(v, arbol(v))}</span>`;
+  // cursor: antes del carácter e; al final, tras el último carácter visible (o fuera, si el último es un «)» oculto)
+  const c = document.createElement("span"); c.className = "cursor";
+  const raiz = vista.firstChild, en = raiz.querySelector(`[data-i="${e}"]`), hueco = raiz.querySelector(`[data-h="${e}"]`);
+  if (hueco) hueco.before(c);
+  else if (en) en.before(c);
+  else { const ult = raiz.querySelector(`[data-i="${e - 1}"]`); if (ult && ult.textContent) ult.after(c); else raiz.append(c); }
+  c.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+(function bucle() { pintarVista(); requestAnimationFrame(bucle); })(); // barato: solo redibuja si algo cambió
+vista.addEventListener("click", ev => {
+  if (entrada.disabled) return;
+  const el = ev.target.closest("[data-i]");
+  let k = entrada.value.length;
+  if (el) { const r = el.getBoundingClientRect(); k = +el.dataset.i + (ev.clientX > r.left + r.width / 2 ? 1 : 0); }
+  else if (ev.target.closest("[data-h]")) k = +ev.target.closest("[data-h]").dataset.h;
+  recien = false;
+  entrada.focus(); entrada.setSelectionRange(k, k);
+});
+
 // ---- motor
 let q = null;
-const ANGULOS = [["D", 2, "grados"], ["R", 1, "radianes"], ["G", 3, "gradianes"]];
-let ang = leer("calc-angulo", 0);
-function aplicarAngulo() { const [l, n, nom] = ANGULOS[ang]; $("i-ang").textContent = l; $("i-ang").title = nom; q && q.set_option("angle " + n); }
-function cambiarAngulo() { ang = (ang + 1) % 3; guardar("calc-angulo", ang); aplicarAngulo(); aviso.textContent = "Ángulos en " + ANGULOS[ang][2]; }
+function aplicarModo() {
+  if (!q) return;
+  for (const [op] of OPCIONES) if (op !== "resultado") q.set_option(`${op} ${modo[op]}`);
+}
+function cambiarModo(op, v) {
+  modo[op] = v; guardar("calc-modo", modo);
+  aplicarModo(); estado();
+  if (op === "decimal comma") pintarTeclados();
+  if (op === "angle") aviso.textContent = "Ángulos en " + { 2: "grados", 1: "radianes", 3: "gradianes" }[v];
+  if (ultimo) calcular(ultimo, false); // como el escritorio: el resultado a la vista se rehace con el modo nuevo
+}
 
 // Qalculate devuelve HTML (colores, <sup>, <i>) pero no escapa el texto entre comillas: se limpia antes de mostrarlo.
 const PERMITIDAS = new Set(["SPAN", "SUP", "SUB", "I", "B"]);
@@ -182,24 +447,35 @@ function limpio(html) {
   }
   return doc.body.firstChild.innerHTML;
 }
+// «exacto = decimal» o «exacto ≈ decimal» → la parte que pide el modo. Las ecuaciones («x = 2») no se tocan.
+function parte(html, expr) {
+  if (modo.resultado === "ambos" || /=/.test(expr) || /\|\|/.test(html)) return html;
+  const trozos = html.split(/ (?:=|≈) /);
+  if (trozos.length < 2) return html;
+  return modo.resultado === "exacto" ? trozos[0] : trozos[trozos.length - 1];
+}
+function evaluar(expr) {
+  const r = q.calculate(expr, 3000, 0);
+  return { ...r, error: r.messages.some(m => /^error/i.test(m)), salida: limpio(parte(r.output, expr)) };
+}
 
 // ponytail: Ans = la expresión anterior entre paréntesis (se recalcula exacta); se anida si encadenas muchos Ans.
-let ans = leer("calc-ans", "0");
+let ans = leer("calc-ans", "0"), ultimo = "";
+const conAns = s => s.replace(/\bans\b/gi, `(${ans})`);
 let hist = leer("calc-historial", []), pos = hist.length;
-function calcular() {
-  const crudo = entrada.value.trim();
+function calcular(crudo = entrada.value.trim(), alHistorial = true) {
   if (!crudo || !q) return;
-  const expr = crudo.replace(/\bans\b/gi, `(${ans})`);
-  const r = q.calculate(expr, 3000, 0);
-  const errores = r.messages.filter(m => /^error/i.test(m));
-  aviso.textContent = r.messages.map(m => m.replace(/^(Warning|Error): /, "")).join(" · ");
-  if (errores.length) { resultado.textContent = "Math ERROR"; resultado.classList.remove("chico"); return; }
-  const salida = limpio(r.output);
-  resultado.innerHTML = salida;
+  const expr = conAns(crudo);
+  const r = evaluar(expr);
+  aviso.textContent = r.messages.map(m => m.replace(/^(Warning|Error|Info): /, "")).join(" · ");
+  if (r.error) { resultado.textContent = "Math ERROR"; resultado.classList.remove("chico"); return; }
+  resultado.innerHTML = `<span class="raiz">${dibujar2D(r.salida)}</span>`;
   resultado.classList.toggle("chico", resultado.textContent.length > 26);
   resultado.scrollLeft = resultado.scrollWidth;
+  if (!alHistorial) return;
+  ultimo = expr;
   if (!/=|\bto\b|→/.test(expr)) { ans = expr; guardar("calc-ans", ans); } // ecuaciones y conversiones no sirven como Ans
-  hist.push({ crudo, entrada: limpio(r.input), salida });
+  hist.push({ crudo, entrada: limpio(r.input), salida: r.salida });
   if (hist.length > 200) hist.shift();
   guardar("calc-historial", hist);
   pos = hist.length;
@@ -224,7 +500,8 @@ function pintarHist() {
     ul.append(li);
   });
 }
-$("b-borrar").onclick = () => { hist = []; pos = 0; guardar("calc-historial", hist); pintarHist(); };
+function borrarHist() { hist = []; pos = 0; guardar("calc-historial", hist); pintarHist(); }
+$("b-borrar").onclick = borrarHist;
 
 entrada.addEventListener("pointerdown", () => { recien = false; });
 entrada.addEventListener("beforeinput", e => {
@@ -232,16 +509,255 @@ entrada.addEventListener("beforeinput", e => {
 });
 entrada.addEventListener("keydown", e => {
   if (e.key === "Enter") { e.preventDefault(); calcular(); }
+  else if (e.key === "Backspace") { e.preventDefault(); recien = false; borrarAtras(); }
   else if (e.key === "Escape") tecla("@ac");
   else if (e.key === "ArrowUp") { e.preventDefault(); navegar(-1); }
   else if (e.key === "ArrowDown") { e.preventDefault(); navegar(1); }
 });
 
-pintarHist(); aplicarAngulo(); estado();
+// ---- variables guardadas (menú Guardar): se vuelven a definir en cada carga
+// ponytail: se guarda la expresión, no el número; si cambias el ángulo, una variable con sin() cambia de valor.
+let vars = leer("calc-vars", {});
+function definirVars() { for (const [n, e] of Object.entries(vars)) q.calculate(`${n} := ${e}`, 3000, 0); }
+
+// ---- tasas de cambio: FloatRates (con CORS abierto), base EUR, una vez al día
+let tasas = leer("calc-tasas", null);
+async function actualizarTasas(forzar) {
+  if (!forzar && tasas && Date.now() - tasas.t < 864e5) return aplicarTasas();
+  const j = await (await fetch("https://www.floatrates.com/daily/eur.json")).json();
+  tasas = { t: Date.now(), lista: Object.values(j).map(m => ({ name: m.code, value: String(m.inverseRate) })) };
+  guardar("calc-tasas", tasas);
+  aplicarTasas();
+}
+function aplicarTasas() { q.updateCurrencyValues(tasas.lista, "EUR", false); } // value = cuántos EUR vale 1 unidad
+
+// ---- catálogo (menús Funciones, Unidades y constantes): scripts/catalogo_qalc.py lo genera desde el mismo wasm
+let catalogo = null;
+const cargarCatalogo = async () => catalogo ??= await (await fetch("qalc/catalogo.json")).json();
+
+// ---- ventanas de los menús
+const dlg = $("dlg"), cuerpo = $("d-cuerpo");
+dlg.addEventListener("close", () => { if (!matchMedia("(pointer: coarse)").matches) entrada.focus(); });
+function abrir(titulo, html) { $("d-titulo").textContent = titulo; cuerpo.innerHTML = html; if (!dlg.open) dlg.showModal(); }
+function alEntrada(txt) { // al cerrar, el foco reinicia el cursor: se guarda antes
+  const a = entrada.selectionStart ?? entrada.value.length, b = entrada.selectionEnd ?? a;
+  dlg.close(); entrada.setSelectionRange(a, b); insertar(txt);
+}
+const expresionActual = () => entrada.value.trim() || (hist.length ? hist[hist.length - 1].crudo : "");
+
+const MENUS = {
+  modo() {
+    abrir("Modo", OPCIONES.map(([op, et, vals]) => `<div class="fila"><label for="m-${op}">${et}</label>
+      <select id="m-${op}" data-op="${op}">${vals.map(([v, t]) => `<option value="${v}"${modo[op] === v ? " selected" : ""}>${t}</option>`).join("")}</select></div>`).join("")
+      + `<p class="nota">Con coma decimal los argumentos se separan con «;» (comb(5;2)). Los cambios rehacen el resultado a la vista.</p>
+      <button class="bot" id="m-reset">Restablecer</button>`);
+    cuerpo.querySelectorAll("select").forEach(s => s.onchange = () => cambiarModo(s.dataset.op, s.value));
+    $("m-reset").onclick = () => { modo = { ...MODO_BASE }; guardar("calc-modo", modo); aplicarModo(); estado(); pintarTeclados(); MENUS.modo(); };
+  },
+
+  async convertir() {
+    await cargarCatalogo();
+    const exp = expresionActual();
+    const rapidos = [["optimal", "Óptima"], ["base", "Unidades base"], ["mixed", "Mixta (1 h + 30 min)"], ["fraction", "Fracción"],
+      ["bin", "Binario"], ["oct", "Octal"], ["dec", "Decimal"], ["hex", "Hexadecimal"], ["roman", "Romano"], ["sexa", "Sexagesimal"], ["time", "Hora (h:mm)"]];
+    abrir("Convertir", `<p class="nota">Convierte <b>${esc(exp.replace(/\s+to\s+.*$/, "")) || "el resultado"}</b> a:</p>
+      <div class="fila"><input id="c-a" class="ancho" list="c-lista" placeholder="unidad: cm, km/h, °F, USD, kWh…"><button class="bot pri" id="c-ir">Convertir</button></div>
+      <datalist id="c-lista">${catalogo.u.map(([c, n, t]) => `<option value="${esc(n)}">${esc(t)} · ${esc(c)}</option>`).join("")}</datalist>
+      <p class="nota">Rápidos:</p>${rapidos.map(([v, t]) => `<button class="bot" data-a="${v}">${t}</button>`).join("")}`);
+    const ir = a => { if (!a || !exp) return; dlg.close(); entrada.value = `${exp.replace(/\s+to\s+.*$/, "")} to ${a}`; calcular(); };
+    $("c-ir").onclick = () => ir($("c-a").value.trim());
+    $("c-a").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); ir($("c-a").value.trim()); } };
+    cuerpo.querySelectorAll("[data-a]").forEach(b => b.onclick = () => ir(b.dataset.a));
+    $("c-a").focus();
+  },
+
+  guardar() {
+    const lista = Object.entries(vars);
+    abrir("Guardar", `<div class="fila"><label for="g-n">Guardar el resultado (Ans) como</label>
+      <input id="g-n" placeholder="nombre, ej. largo" pattern="[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9]*"></div>
+      <button class="bot pri" id="g-ok">Guardar variable</button> <button class="bot" id="g-copiar">Copiar resultado</button>
+      <p class="nota">Las variables quedan en este navegador y se escriben por su nombre (sin guion bajo: Qalculate lo ignora).</p>
+      ${lista.length ? `<table class="bases">${lista.map(([n, e]) => `<tr><td><b>${esc(n)}</b></td><td>${esc(e)}</td><td><button class="chico-b" data-borrar="${esc(n)}">Quitar</button></td></tr>`).join("")}</table>` : ""}`);
+    $("g-ok").onclick = () => {
+      const n = $("g-n").value.trim();
+      if (!/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9]*$/.test(n)) return $("g-n").focus();
+      vars[n] = `(${ans})`; guardar("calc-vars", vars); definirVars();
+      aviso.textContent = `Guardado: ${n}`; MENUS.guardar();
+    };
+    $("g-copiar").onclick = () => { navigator.clipboard.writeText(texto(hist.length ? hist[hist.length - 1].salida : "")); aviso.textContent = "Resultado copiado"; dlg.close(); };
+    cuerpo.querySelectorAll("[data-borrar]").forEach(b => b.onclick = () => {
+      delete vars[b.dataset.borrar]; guardar("calc-vars", vars);
+      aviso.textContent = "Quitada (deja de existir al recargar la página)"; MENUS.guardar();
+    });
+  },
+
+  funciones: () => MENUS.catalogo("f", "Funciones"),
+  unidades: () => MENUS.catalogo("u", "Unidades"),
+  constantes: () => MENUS.catalogo("v", "Constantes y variables"),
+  async catalogo(tipo, titulo) {
+    await cargarCatalogo();
+    const filas = catalogo[tipo];
+    abrir(titulo, `<input type="search" id="k-buscar" placeholder="Buscar por nombre o descripción…"><div class="cat" id="k-lista"></div>`);
+    const item = (r, i) => {
+      const [, n, t, args, d] = r;
+      const firma = tipo === "f" ? `${n}(${(args || []).join("; ")})` : n;
+      return `<button class="item" data-i="${i}" title="${esc(d || t)}"><code>${esc(firma)}</code> — ${esc(t)}${d ? `<small>${esc(d.length > 160 ? d.slice(0, 160) + "…" : d)}</small>` : ""}</button>`;
+    };
+    const pintar = () => {
+      const b = $("k-buscar").value.trim().toLowerCase();
+      if (b) {
+        // primero lo exacto (nombre o título), después lo que empieza igual, después lo que lo contiene en cualquier parte
+        const nota = r => { const n = r[1].toLowerCase(), t = r[2].toLowerCase(); return n === b || t === b ? 0 : n.startsWith(b) || t.startsWith(b) ? 1 : 2; };
+        const hits = filas.map((r, i) => [r, i]).filter(([r]) => (r[1] + " " + r[2] + " " + (r[4] || "")).toLowerCase().includes(b))
+          .sort((x, y) => nota(x[0]) - nota(y[0]));
+        $("k-lista").innerHTML = hits.slice(0, 150).map(([r, i]) => item(r, i)).join("") || `<p class="nota">Nada con «${esc(b)}».</p>`;
+        return;
+      }
+      const cats = new Map();
+      filas.forEach((r, i) => { if (!cats.has(r[0])) cats.set(r[0], []); cats.get(r[0]).push(item(r, i)); });
+      $("k-lista").innerHTML = [...cats].sort((a, b) => a[0].localeCompare(b[0], "es"))
+        .map(([c, xs]) => `<details><summary>${esc(c || "Otras")} <span>(${xs.length})</span></summary>${xs.join("")}</details>`).join("");
+    };
+    $("k-buscar").oninput = pintar;
+    $("k-lista").onclick = e => {
+      const b = e.target.closest("[data-i]"); if (!b) return;
+      const n = filas[b.dataset.i][1];
+      const antes = entrada.value[(entrada.selectionStart ?? entrada.value.length) - 1] || "";
+      alEntrada(tipo === "f" ? n + "(" : tipo === "u" && /[\p{N}]/u.test(antes) ? "_" + n : n);
+    };
+    pintar();
+    $("k-buscar").focus();
+  },
+
+  graficar() {
+    const actual = entrada.value.trim();
+    abrir("Graficar", `<label class="nota" for="p-f">Funciones de x (una por línea)</label>
+      <textarea id="p-f" rows="3">${esc(/x/.test(actual) && !/=/.test(actual) ? actual : leer("calc-grafico", "sin(x)"))}</textarea>
+      <div class="fila"><label for="p-min">x desde</label><input id="p-min" value="${modo.angle === "2" ? -360 : -10}" size="8">
+      <label for="p-max">hasta</label><input id="p-max" value="${modo.angle === "2" ? 360 : 10}" size="8">
+      <button class="bot pri" id="p-ir">Graficar</button></div>
+      <p class="nota">Las funciones trigonométricas usan el ángulo del modo (${{ 2: "grados", 1: "radianes", 3: "gradianes" }[modo.angle]}).</p>
+      <div id="grafico"></div>`);
+    $("p-ir").onclick = graficar;
+    graficar();
+  },
+
+  bases() {
+    abrir("Bases numéricas", `<div class="fila"><label for="b-v">Valor</label><input id="b-v" value="Ans" class="ancho"></div>
+      <p class="nota">Escribe un número en cualquier base: 0xFF, 0b1010, 0o17, o una expresión. La base de entrada y de resultado por defecto se cambian en Modo.</p>
+      <table class="bases" id="b-t"></table>`);
+    const BASES = [["Binaria", "bin"], ["Octal", "oct"], ["Decimal", "dec"], ["Duodecimal", "base 12"], ["Hexadecimal", "hex"],
+      ["Base 36", "base 36"], ["Romana", "roman"], ["Sexagesimal", "sexa"]];
+    const pintar = () => {
+      const v = conAns($("b-v").value.trim() || "0");
+      $("b-t").innerHTML = BASES.map(([t, b]) => {
+        const r = evaluar(`(${v}) to ${b}`);
+        return `<tr><td>${t}</td><td>${r.error ? "—" : r.salida}</td></tr>`;
+      }).join("");
+    };
+    $("b-v").oninput = pintar;
+    pintar();
+    $("b-v").select();
+  },
+
+  teclado() {
+    abrir("Teclado", Object.entries(TECLADOS).map(([k, [t]]) => `<button class="bot${teclado === k ? " pri" : ""}" data-k="${k}">${t}</button>`).join("")
+      + `<button class="bot${teclado === "oculto" ? " pri" : ""}" data-k="oculto">Ocultar teclado</button>
+      <p class="nota">General es el de la Casio. Programación: dígitos A–F, operaciones de bits y conversión de base. Álgebra: incógnitas, resolver, derivar, integrar, límites y sumatorias.</p>`);
+    cuerpo.querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
+      teclado = b.dataset.k; guardar("calc-teclado", teclado); pintarTeclados(); MENUS.teclado();
+    });
+  },
+
+  menu() {
+    const fecha = tasas ? new Date(tasas.t).toLocaleString("es-CL") : "nunca";
+    abrir("Menú", `<button class="bot" id="u-const">Constantes y variables…</button>
+      <button class="bot" id="u-tasas">Actualizar tasas de cambio</button>
+      <button class="bot" id="u-exportar">Exportar historial (.txt)</button>
+      <button class="bot" id="u-borrar">Borrar historial</button>
+      <button class="bot" id="u-tema">Tema claro / oscuro</button>
+      <p class="nota">Tasas de cambio: ${fecha} (FloatRates, base EUR; se renuevan solas una vez al día). Ej.: 100 USD to CLP.</p>
+      <p class="nota">Atajos: Enter calcula · Esc borra · ↑/↓ recorren el historial · tras «=», un operador sigue desde Ans.</p>
+      <p class="nota">Motor: Qalculate! (libqalculate de Hanna Knutsson) compilado a WebAssembly por Stephan Troyer. GPL-3.0.
+      Manual de expresiones: <a href="https://qalculate.github.io/manual/index.html" target="_blank" rel="noopener">qalculate.github.io/manual</a>.</p>`);
+    $("u-const").onclick = () => MENUS.constantes();
+    $("u-tema").onclick = () => $("b-tema").click();
+    $("u-tasas").onclick = async () => {
+      $("u-tasas").textContent = "Actualizando…";
+      try { await actualizarTasas(true); MENUS.menu(); } catch (e) { $("u-tasas").textContent = "No se pudo: " + e.message; }
+    };
+    $("u-exportar").onclick = () => {
+      const txt = hist.map(h => `${texto(h.entrada)}\n  = ${texto(h.salida)}`).join("\n\n");
+      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([txt], { type: "text/plain" })), download: "historial-calculadora.txt" });
+      a.click(); URL.revokeObjectURL(a.href);
+    };
+    $("u-borrar").onclick = () => { if (confirm("¿Borrar todo el historial?")) { borrarHist(); dlg.close(); } };
+  },
+};
+document.querySelectorAll("[data-menu]").forEach(b => b.onclick = () => q ? MENUS[b.dataset.menu]() : (aviso.textContent = "El motor aún está cargando…"));
+
+// gráfico: plot() de Qalculate entrega los puntos (x y por línea; línea vacía = corte) y aquí se dibuja en SVG
+function graficar() {
+  const fs = $("p-f").value.split("\n").map(s => s.trim()).filter(Boolean);
+  const min = $("p-min").value.trim(), max = $("p-max").value.trim();
+  guardar("calc-grafico", $("p-f").value);
+  const series = [], errores = [];
+  for (const f of fs) {
+    const r = q.calculate(`plot(${conAns(f)}; ${min}; ${max})`, 5000, 0);
+    const datos = r.plotData && Object.values(r.plotData.data)[0];
+    if (!datos) { errores.push(`${f}: ${r.messages.join(" ") || "no se pudo graficar"}`); continue; }
+    series.push({ f, tramos: datos.split(/\n\s*\n/).map(t => t.split("\n").map(l => l.trim().split(/\s+/).map(Number)).filter(p => p.length === 2 && p.every(isFinite))) });
+  }
+  // un salto enorme entre dos puntos seguidos es una asíntota (tan, 1/x): ahí se corta la línea
+  const alto = (() => { const ys = series.flatMap(s => s.tramos.flat()).map(p => p[1]).sort((a, b) => a - b); return (ys[Math.floor(ys.length * .98)] ?? 0) - (ys[Math.floor(ys.length * .02)] ?? 0) || 1; })();
+  for (const s of series) {
+    s.tramos = s.tramos.flatMap(t => {
+      const out = [[]];
+      t.forEach((p, k) => { if (k && Math.abs(p[1] - t[k - 1][1]) > alto && Math.sign(p[1]) !== Math.sign(t[k - 1][1])) out.push([]); out.at(-1).push(p); });
+      return out;
+    });
+  }
+  const pts = series.flatMap(s => s.tramos.flat());
+  if (!pts.length) { $("grafico").innerHTML = `<p class="nota">${esc(errores.join(" · ") || "Nada que graficar.")}</p>`; return; }
+  // el rango y se corta en los percentiles 5–95 para que una asíntota (tan, 1/x) no aplaste el resto
+  const ys = pts.map(p => p[1]).sort((a, b) => a - b), xs = pts.map(p => p[0]);
+  let y0 = ys[Math.floor(ys.length * .05)], y1 = ys[Math.ceil(ys.length * .95) - 1];
+  if (y1 - y0 < 1e-9) { y0 -= 1; y1 += 1; }
+  const pad = (y1 - y0) * .08; y0 -= pad; y1 += pad;
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const W = 600, H = 360, M = 34;
+  const X = x => M + (x - x0) / (x1 - x0 || 1) * (W - 2 * M), Y = y => H - M - (y - y0) / (y1 - y0) * (H - 2 * M);
+  const num = v => Number(v.toPrecision(4)).toLocaleString("es-CL", { maximumFractionDigits: 4 });
+  const COLORES = ["#2f5da8", "#c9505f", "#1f7a3a", "#b07a12"];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico">`;
+  for (let i = 0; i <= 4; i++) {
+    const gx = x0 + (x1 - x0) * i / 4, gy = y0 + (y1 - y0) * i / 4;
+    svg += `<line x1="${X(gx)}" y1="${M}" x2="${X(gx)}" y2="${H - M}" stroke="currentColor" stroke-opacity=".08"/>
+      <line x1="${M}" y1="${Y(gy)}" x2="${W - M}" y2="${Y(gy)}" stroke="currentColor" stroke-opacity=".08"/>
+      <text x="${X(gx)}" y="${H - M + 14}" text-anchor="middle">${num(gx)}</text><text x="${M - 4}" y="${Y(gy) + 4}" text-anchor="end">${num(gy)}</text>`;
+  }
+  if (x0 < 0 && x1 > 0) svg += `<line x1="${X(0)}" y1="${M}" x2="${X(0)}" y2="${H - M}" stroke="currentColor" stroke-opacity=".45"/>`;
+  if (y0 < 0 && y1 > 0) svg += `<line x1="${M}" y1="${Y(0)}" x2="${W - M}" y2="${Y(0)}" stroke="currentColor" stroke-opacity=".45"/>`;
+  svg += `<clipPath id="recorte"><rect x="${M}" y="${M}" width="${W - 2 * M}" height="${H - 2 * M}"/></clipPath><g clip-path="url(#recorte)" fill="none" stroke-width="2">`;
+  series.forEach((s, i) => s.tramos.forEach(t => {
+    svg += `<polyline stroke="${COLORES[i % 4]}" points="${t.map(([x, y]) => `${X(x).toFixed(1)},${Y(Math.max(y0 - (y1 - y0), Math.min(y1 + (y1 - y0), y))).toFixed(1)}`).join(" ")}"/>`;
+  }));
+  svg += `</g>` + series.map((s, i) => `<text x="${M + 6}" y="${M + 14 + i * 15}" style="fill:${COLORES[i % 4]}">${esc(s.f)}</text>`).join("") + `</svg>`;
+  $("grafico").innerHTML = svg + (errores.length ? `<p class="nota">${esc(errores.join(" · "))}</p>` : "");
+}
+
+// PWA: offline con service worker; instalada, la ventana se puede ajustar al ancho exacto de la calculadora
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+$("b-ajustar").onclick = () => {
+  const marco = window.outerWidth - window.innerWidth; // bordes de la ventana
+  window.resizeTo(casio.getBoundingClientRect().width + marco, window.outerHeight);
+};
+
+pintarTeclados(); pintarHist(); estado();
 Module({ locateFile: p => "qalc/libqalculate-0.0.6.wasm" }).then(m => {
   q = m;
-  for (const o of ["decimal comma on", "digit grouping off", "precision 10"]) q.set_option(o);
-  aplicarAngulo();
+  aplicarModo(); definirVars();
+  actualizarTasas(false).catch(() => {}); // sin internet quedan las del motor
   entrada.disabled = false; entrada.placeholder = ""; entrada.focus();
 }).catch(e => { entrada.placeholder = "no se pudo cargar el motor"; aviso.textContent = String(e); });
 

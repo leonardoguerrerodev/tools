@@ -35,9 +35,19 @@ Para publicar un cambio: `./sincronizar_taller.sh` (copia, agrega el «←» al 
 
 ## Calculadora científica
 
-`public/calculadora/`: frontend propio sobre [libqalculate-wasm](https://github.com/stephtr/libqalculate-wasm) (GPL-3.0),
-copiado tal cual en `public/calculadora/qalc/` con la versión en el nombre. Para actualizar el motor:
-`npm pack libqalculate-wasm@<v>`, copiar `libqalculate.js`/`.wasm` con el nuevo nombre y cambiar la versión en `index.html`.
+`public/calculadora/`: frontend propio (estilo Casio fx-82MS) sobre [libqalculate-wasm](https://github.com/stephtr/libqalculate-wasm)
+(GPL-3.0), copiado tal cual en `public/calculadora/qalc/` con la versión en el nombre.
+
+- Menús como el Qalculate de escritorio: Modo, Convertir, Guardar, Funciones, Unidades, Graficar, Bases numéricas, Teclado y Menú.
+- Editor 2D: `^` abre un exponente que se mantiene hasta espacio o → (escribe `^( )`), `a/b` se dibuja como fracción,
+  `número_unidad` como unidad (20_s) y `nombre_índice` como subíndice (a_1). El texto es lo que se calcula.
+- `qalc/catalogo.json` (funciones, unidades y constantes en español) sale del propio wasm:
+  `python3 scripts/catalogo_qalc.py public/calculadora/qalc/libqalculate-<v>.wasm`.
+- PWA (`manifest.webmanifest`, `sw.js`): funciona sin internet. El manifest y los íconos son públicos en el Worker
+  (el navegador los pide sin cookie). Instalada, el botón ⇔ ajusta la ventana al ancho de la calculadora.
+- Tasas de cambio: FloatRates (base EUR), una vez al día desde el navegador.
+- Actualizar el motor: `npm pack libqalculate-wasm@<v>`, copiar `libqalculate.js`/`.wasm` con el nuevo nombre, cambiar la
+  versión en `index.html` y `sw.js` (y subir `CACHE`), y regenerar el catálogo.
 
 ## Probar en local
 

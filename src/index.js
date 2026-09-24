@@ -9,6 +9,7 @@
 const COOKIE = "tools_sesion";
 const DIAS = 30;
 const ESPERA_FALLO_MS = 1500; // frena la fuerza bruta
+const PUBLICOS = /^\/calculadora\/(manifest\.webmanifest|icono-\d+\.png)$/;
 
 const enc = new TextEncoder();
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -107,6 +108,8 @@ export default {
       } }));
     }
 
+    // el navegador pide el manifest y los íconos de una PWA sin cookie: son públicos (no revelan nada)
+    if (PUBLICOS.test(url.pathname)) return seguridad(await env.ASSETS.fetch(req));
     if (!(await sesionValida(req, env))) return paginaEntrar(rutaSegura(url.pathname + url.search));
     const res = await env.ASSETS.fetch(req);
     const r = seguridad(res);

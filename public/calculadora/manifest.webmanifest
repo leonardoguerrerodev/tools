@@ -1,0 +1,16 @@
+{
+  "name": "Calculadora científica — Obsedium Tools",
+  "short_name": "Calculadora",
+  "description": "Calculadora estilo Casio con el motor de Qalculate!",
+  "lang": "es",
+  "start_url": "/calculadora/",
+  "scope": "/calculadora/",
+  "id": "/calculadora/",
+  "display": "standalone",
+  "background_color": "#15161a",
+  "theme_color": "#34364a",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
