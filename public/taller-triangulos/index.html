@@ -4,11 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Taller de triángulos</title>
+<script>(function(){var t=null;try{t=localStorage.getItem("obsedium-tema")}catch(e){}if(t==="oscuro"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.tema="oscuro"})();</script>
 <style>
   :root {
     --fondo: #f6f4ef; --panel: #ffffff; --borde: #ddd8cb; --texto: #1d1d1b; --suave: #6b675e;
     --acento: #2f5da8; --acento-2: #e8eef8; --bien: #1f7a3a; --mal: #b3261e; --aviso: #8a5a00; --campo: #fbfaf7;
   }
+  :root[data-tema="oscuro"] {
+    --fondo: #15161a; --panel: #1e2025; --borde: #363940; --texto: #e7e5e0; --suave: #a29e95;
+    --acento: #7ea6e6; --acento-2: #25324a; --bien: #62cc8e; --mal: #f2827a; --aviso: #e2b86c; --campo: #24272c;
+    color-scheme: dark;
+  }
+  /* el dibujo se ve oscuro en pantalla; lo que se exporta sigue claro */
+  :root[data-tema="oscuro"] #lienzo svg { filter: invert(.9) hue-rotate(180deg); }
+  :root[data-tema="oscuro"] button.pri { color: #10131a; }
+  :root[data-tema="oscuro"] .paso.nuevo { background: #3a3320; }
+  :root[data-tema="oscuro"] #aviso { background: #e7e5e0; color: #15161a; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding-bottom: 70px; }
@@ -139,6 +150,7 @@
       </div>
     </details>
     <button id="b-formulas">Fórmulas</button>
+    <button id="b-tema" title="Modo claro u oscuro" aria-label="Cambiar entre modo claro y oscuro"></button>
     <details class="menu" id="m-ajustes"><summary title="Ajustes">⚙</summary>
       <div class="caja-menu">
         <label>Decimales <select id="o-dec"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
@@ -1453,6 +1465,14 @@ function griegasEnPagina(raiz) {
   while (w.nextNode()) if (/[αβγθ]/.test(w.currentNode.nodeValue) && !w.currentNode.parentElement.closest("input,textarea,script,style,svg,.griega")) nodos.push(w.currentNode);
   for (const t of nodos) { const sp = document.createElement("span"); sp.innerHTML = griegas(esc(t.nodeValue)); t.replaceWith(...sp.childNodes); }
 }
+function pintarTema() { const o = document.documentElement.dataset.tema === "oscuro"; $("b-tema").textContent = o ? "☀️" : "🌙"; }
+$("b-tema").onclick = () => {
+  const o = document.documentElement.dataset.tema !== "oscuro";
+  if (o) document.documentElement.dataset.tema = "oscuro"; else delete document.documentElement.dataset.tema;
+  try { localStorage.setItem("obsedium-tema", o ? "oscuro" : "claro"); } catch (_) {}
+  pintarTema();
+};
+pintarTema();
 griegasEnPagina($("plegable"));
 todo();
 // ============================================================ FIN INTERFAZ

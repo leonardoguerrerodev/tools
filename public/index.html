@@ -5,13 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Obsedium Tools</title>
+<script>(function(){var t=null;try{t=localStorage.getItem("obsedium-tema")}catch(e){}if(t==="oscuro"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.tema="oscuro"})();</script>
 <style>
   :root { --fondo: #f6f4ef; --panel: #ffffff; --borde: #ddd8cb; --texto: #1d1d1b; --suave: #6b675e; --acento: #2f5da8; --acento-2: #e8eef8; }
+  :root[data-tema="oscuro"] { --fondo: #15161a; --panel: #1e2025; --borde: #363940; --texto: #e7e5e0; --suave: #a29e95; --acento: #7ea6e6; --acento-2: #25324a; --mal: #f2827a; color-scheme: dark; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   header { display: flex; align-items: center; gap: 12px; padding: 14px 22px; background: var(--panel); border-bottom: 1px solid var(--borde); }
   h1 { font-size: 18px; margin: 0; }
-  header a { margin-left: auto; color: var(--suave); font-size: 13.5px; text-decoration: none; border: 1px solid var(--borde); border-radius: 8px; padding: 5px 12px; }
+  #b-tema { margin-left: auto; font-size: 15px; padding: 4px 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); cursor: pointer; }
+  header a { color: var(--suave); font-size: 13.5px; text-decoration: none; border: 1px solid var(--borde); border-radius: 8px; padding: 5px 12px; }
   header a:hover { border-color: var(--acento); color: var(--acento); }
   main { max-width: 1100px; margin: 0 auto; padding: 22px; }
   .intro { color: var(--suave); margin: 0 0 18px; }
@@ -28,6 +31,7 @@
 <body>
 <header>
   <h1>Obsedium Tools</h1>
+  <button id="b-tema" title="Modo claro u oscuro" aria-label="Cambiar entre modo claro y oscuro"></button>
   <a href="/salir">Cerrar sesión</a>
 </header>
 <main>
@@ -42,5 +46,6 @@
     </a>
   </div>
 </main>
+<script>(function(){var b=document.getElementById("b-tema");function p(){b.textContent=document.documentElement.dataset.tema==="oscuro"?"☀️":"🌙"}b.onclick=function(){var o=document.documentElement.dataset.tema!=="oscuro";if(o)document.documentElement.dataset.tema="oscuro";else delete document.documentElement.dataset.tema;try{localStorage.setItem("obsedium-tema",o?"oscuro":"claro")}catch(e){}p()};p()})();</script>
 </body>
 </html>

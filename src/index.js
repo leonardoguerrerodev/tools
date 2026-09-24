@@ -52,8 +52,13 @@ function paginaEntrar(volver, error, estado = 401) {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Obsedium Tools</title><meta name="robots" content="noindex">
+<script>(function(){var t=null;try{t=localStorage.getItem("obsedium-tema")}catch(e){}if(t==="oscuro"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.tema="oscuro"})();</script>
 <style>
   :root { --fondo:#f6f4ef; --panel:#fff; --borde:#ddd8cb; --texto:#1d1d1b; --suave:#6b675e; --acento:#2f5da8; --mal:#b3261e; }
+  :root[data-tema="oscuro"] { --fondo: #15161a; --panel: #1e2025; --borde: #363940; --texto: #e7e5e0; --suave: #a29e95; --acento: #7ea6e6; --mal: #f2827a; color-scheme: dark; }
+  :root[data-tema="oscuro"] button[type=submit] { color: #10131a; }
+  input[type=password] { background: var(--panel); color: var(--texto); }
+  #b-tema { position: fixed; top: 14px; right: 14px; font-size: 15px; padding: 4px 10px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); cursor: pointer; }
   * { box-sizing: border-box; }
   body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--fondo); color:var(--texto); font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; padding:16px; }
   form { background:var(--panel); border:1px solid var(--borde); border-radius:14px; padding:26px; width:min(360px,100%); }
@@ -64,6 +69,7 @@ function paginaEntrar(volver, error, estado = 401) {
   button { margin-top:14px; width:100%; font:inherit; padding:9px; border:0; border-radius:8px; background:var(--acento); color:#fff; cursor:pointer; }
   .error { color:var(--mal); font-size:13.5px; margin:10px 0 0; }
 </style></head><body>
+<button id="b-tema" type="button" title="Modo claro u oscuro" aria-label="Cambiar entre modo claro y oscuro"></button>
 <form method="post" action="/entrar">
   <h1>Obsedium Tools</h1>
   <p>Herramientas privadas. Escribe la contraseña maestra.</p>
@@ -72,7 +78,8 @@ function paginaEntrar(volver, error, estado = 401) {
   <input type="hidden" name="volver" value="${esc(volver)}">
   <button type="submit">Entrar</button>
   ${error ? `<p class="error" role="alert">${esc(error)}</p>` : ""}
-</form></body></html>`;
+</form>
+<script>(function(){var b=document.getElementById("b-tema");function p(){b.textContent=document.documentElement.dataset.tema==="oscuro"?"☀️":"🌙"}b.onclick=function(){var o=document.documentElement.dataset.tema!=="oscuro";if(o)document.documentElement.dataset.tema="oscuro";else delete document.documentElement.dataset.tema;try{localStorage.setItem("obsedium-tema",o?"oscuro":"claro")}catch(e){}p()};p()})();</script></body></html>`;
   return seguridad(new Response(html, { status: estado, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }));
 }
 
