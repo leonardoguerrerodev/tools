@@ -1,25 +1,15 @@
 # Obsedium Tools
 
-Herramientas propias, publicadas en **https://tools.obsedium.cl** detrás de una contraseña maestra.
+Herramientas propias, abiertas en **https://tools.obsedium.cl** (repo público).
 
 ## Cómo está hecho
 
-- `public/`: el sitio. `public/index.html` es el índice y cada herramienta vive en su carpeta
-  (`public/taller-triangulos/index.html`). Son páginas estáticas que funcionan sin internet.
-- `src/index.js`: un Worker de Cloudflare que corre **antes** que los archivos (`run_worker_first`).
-  Sin sesión válida responde con la página de contraseña, así que ninguna herramienta se entrega sin entrar.
-- La sesión es una cookie firmada (HMAC) que dura 30 días. Cambiar la contraseña cierra todas las sesiones.
-
-## Secretos
-
-No van al repo. Se configuran en Cloudflare:
-
-```bash
-npx wrangler secret put TOOLS_PASSWORD   # la contraseña maestra
-npx wrangler secret put SESSION_SECRET   # clave aleatoria larga para firmar la sesión
-```
-
-Sin los dos secretos el sitio no abre nada (responde 503).
+- `public/`: el sitio, solo archivos estáticos. `public/index.html` es el índice y cada herramienta vive en su carpeta
+  (`public/taller-triangulos/index.html`). Funcionan sin internet.
+- No hay código de Worker: `wrangler.toml` publica `public/` como assets y Cloudflare los sirve directo.
+  Las cabeceras (seguridad y caché del motor de la calculadora) están en `public/_headers`.
+- Si algún día una herramienta necesita datos privados, protegerla con Cloudflare Access (login con Google/GitHub)
+  en su propia ruta, no con una clave casera.
 
 ## Agregar una herramienta
 
@@ -43,8 +33,9 @@ Para publicar un cambio: `./sincronizar_taller.sh` (copia, agrega el «←» al 
   `número_unidad` como unidad (20_s) y `nombre_índice` como subíndice (a_1). El texto es lo que se calcula.
 - `qalc/catalogo.json` (funciones, unidades y constantes en español) sale del propio wasm:
   `python3 scripts/catalogo_qalc.py public/calculadora/qalc/libqalculate-<v>.wasm`.
-- PWA (`manifest.webmanifest`, `sw.js`): funciona sin internet. El manifest y los íconos son públicos en el Worker
-  (el navegador los pide sin cookie). Instalada, el botón ⇔ ajusta la ventana al ancho de la calculadora.
+- PWA (`manifest.webmanifest`, `sw.js`): se instala y funciona sin internet.
+- Chrome no deja angostar una ventana normal por debajo de ~500 px: el botón ⧉ abre una ventana flotante del tamaño
+  de la calculadora, y dentro de ella (o en la app instalada) ⇔ la vuelve a ajustar.
 - Tasas de cambio: FloatRates (base EUR), una vez al día desde el navegador.
 - Actualizar el motor: `npm pack libqalculate-wasm@<v>`, copiar `libqalculate.js`/`.wasm` con el nuevo nombre, cambiar la
   versión en `index.html` y `sw.js` (y subir `CACHE`), y regenerar el catálogo.

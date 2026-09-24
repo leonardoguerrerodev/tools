@@ -2,8 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- sin zoom en el celular: una calculadora se toca rápido y el zoom accidental estorba -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="robots" content="noindex">
+<!-- ventana flotante (?flotante) o app instalada: solo la calculadora, sin cabecera -->
+<script>if (/[?&]flotante\b/.test(location.search) || matchMedia("(display-mode: standalone)").matches) document.documentElement.classList.add("flotante");</script>
 <title>Calculadora científica</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#34364a">
@@ -15,7 +18,8 @@
   :root[data-tema="oscuro"] { --fondo: #15161a; --panel: #1e2025; --borde: #363940; --texto: #e7e5e0; --suave: #a29e95; --acento: #7ea6e6; --campo: #24272c; color-scheme: dark; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: manipulation; /* sin zoom por doble toque */ }
+  @media (pointer: coarse) { #d-cuerpo select, #d-cuerpo input, #d-cuerpo textarea { font-size: 16px !important; } } /* iOS hace zoom al enfocar campos de menos de 16 px */
   button, input, select, textarea { font: inherit; color: inherit; }
   header { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: var(--panel); border-bottom: 1px solid var(--borde); }
   h1 { font-size: 17px; margin: 0; }
@@ -104,9 +108,8 @@
     .barra button { padding: 6px 7px; }
     .barra b { font-size: 15px; }
   }
-  @media (display-mode: standalone) { header { display: none; } }
-  #b-ajustar { display: none; }
-  @media (display-mode: standalone) { #b-ajustar { display: flex; } }
+  .flotante header, .flotante .pie, .flotante #b-flotante, #b-ajustar { display: none; }
+  .flotante #b-ajustar { display: flex; }
   .pie { width: 100%; text-align: center; color: var(--suave); font-size: 12px; }
   .pie a { color: inherit; }
 
@@ -157,7 +160,8 @@
   <button data-menu="bases" title="Bases numéricas" aria-label="Bases numéricas"><b aria-hidden="true">01</b><span>Bases numéricas</span></button>
   <button data-menu="teclado" title="Teclado" aria-label="Teclado"><b aria-hidden="true">⠿</b><span>Teclado</span></button>
   <button data-menu="menu" title="Menú" aria-label="Menú"><b aria-hidden="true">☰</b><span>Menú</span></button>
-  <button id="b-ajustar" title="Ajustar el ancho de la ventana a la calculadora" aria-label="Ajustar ventana"><b aria-hidden="true">⇔</b><span>Ajustar</span></button>
+  <button id="b-flotante" title="Abrir la calculadora en su propia ventana, del tamaño justo" aria-label="Ventana flotante"><b aria-hidden="true">⧉</b><span>Flotante</span></button>
+  <button id="b-ajustar" title="Ajustar la ventana al contorno de la calculadora" aria-label="Ajustar ventana"><b aria-hidden="true">⇔</b><span>Ajustar</span></button>
 </nav>
 <main>
   <section class="casio" id="casio" aria-label="Calculadora">
@@ -746,12 +750,24 @@ function graficar() {
   $("grafico").innerHTML = svg + (errores.length ? `<p class="nota">${esc(errores.join(" · "))}</p>` : "");
 }
 
-// PWA: offline con service worker; instalada, la ventana se puede ajustar al ancho exacto de la calculadora
+// PWA: offline con service worker
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
-$("b-ajustar").onclick = () => {
-  const marco = window.outerWidth - window.innerWidth; // bordes de la ventana
-  window.resizeTo(casio.getBoundingClientRect().width + marco, window.outerHeight);
+
+// Chrome no deja angostar una ventana normal (con pestañas) por debajo de ~500 px, y la calculadora mide 430.
+// Una ventana emergente o la app instalada sí: «Flotante» abre una del tamaño justo y «Ajustar» la vuelve a calzar.
+const contorno = () => [casio.getBoundingClientRect().width, document.querySelector(".barra").offsetHeight + casio.offsetHeight];
+$("b-flotante").onclick = () => {
+  const [w, h] = contorno();
+  window.open(location.pathname + "?flotante", "calculadora", `popup,width=${Math.ceil(w)},height=${Math.ceil(h)}`);
 };
+function ajustarVentana() {
+  const [w, h] = contorno();
+  window.resizeTo(Math.ceil(w) + window.outerWidth - window.innerWidth, Math.ceil(h) + window.outerHeight - window.innerHeight);
+}
+$("b-ajustar").onclick = ajustarVentana;
+if (document.documentElement.classList.contains("flotante")) addEventListener("load", () => setTimeout(ajustarVentana, 50));
+// Safari de iOS ignora user-scalable=no: el pellizco se frena a mano
+document.addEventListener("gesturestart", e => e.preventDefault());
 
 pintarTeclados(); pintarHist(); estado();
 Module({ locateFile: p => "qalc/libqalculate-0.0.6.wasm" }).then(m => {

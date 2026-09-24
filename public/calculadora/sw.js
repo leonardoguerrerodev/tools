@@ -1,5 +1,5 @@
 // Calculadora offline: la página y el motor quedan guardados. Página y catálogo: red primero (así se ven los cambios);
-// el motor (lleva la versión en el nombre): caché primero. Solo se guardan respuestas OK, nunca la página de contraseña (401).
+// el motor (lleva la versión en el nombre): caché primero. Solo se guardan respuestas OK.
 const CACHE = "calculadora-v1";
 const BASICOS = ["./", "qalc/libqalculate-0.0.6.js", "qalc/libqalculate-0.0.6.wasm", "qalc/catalogo.json", "icono-192.png"];
 
