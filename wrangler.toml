@@ -1,0 +1,16 @@
+name = "obsedium-tools"
+main = "src/index.js"
+compatibility_date = "2025-03-01"
+workers_dev = false
+
+# El dominio queda declarado aquí: sobrevive a cada despliegue.
+routes = [{ pattern = "tools.obsedium.cl", custom_domain = true }]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+# El Worker revisa la sesión antes de entregar cualquier archivo de public/.
+run_worker_first = true
+
+# Secretos (no van aquí): TOOLS_PASSWORD y SESSION_SECRET → npx wrangler secret put <NOMBRE>
+# En local: archivo .dev.vars (ignorado por git).

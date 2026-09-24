@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller de triángulos</title>
+<style>
+  :root {
+    --fondo: #f6f4ef; --panel: #ffffff; --borde: #ddd8cb; --texto: #1d1d1b; --suave: #6b675e;
+    --acento: #2f5da8; --acento-2: #e8eef8; --bien: #1f7a3a; --mal: #b3261e; --aviso: #8a5a00; --campo: #fbfaf7;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding-bottom: 70px; }
+  button, select, input, textarea { font: inherit; }
+  select, input[type=text], input[type=number], textarea { font-size: 14px; padding: 6px 8px; border: 1px solid var(--borde); border-radius: 7px; background: var(--campo); color: var(--texto); }
+  input:focus, select:focus, textarea:focus, button:focus-visible, summary:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+  button { font-size: 13.5px; padding: 6px 12px; border-radius: 8px; cursor: pointer; border: 1px solid var(--borde); background: var(--panel); color: var(--texto); }
+  button:hover { border-color: var(--acento); }
+  button.pri { background: var(--acento); border-color: var(--acento); color: #fff; }
+  button.icono { padding: 4px 8px; }
+  button:disabled { opacity: .4; cursor: default; }
+  .suave { color: var(--suave); font-size: 12.5px; }
+  .bien { color: var(--bien); font-weight: 600; } .mal { color: var(--mal); } .aviso { color: var(--aviso); }
+
+  /* cabecera */
+  header { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 18px; background: var(--panel); border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 5; }
+  h1 { font-size: 17px; margin: 0 6px 0 0; white-space: nowrap; }
+  #figuras { display: flex; flex-wrap: wrap; gap: 4px; }
+  #figuras button { padding: 5px 10px; border-radius: 999px; font-size: 13px; }
+  #figuras button[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #fff; }
+  .derecha { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  details.menu { position: relative; }
+  details.menu > summary { list-style: none; cursor: pointer; font-size: 13.5px; padding: 6px 12px; border: 1px solid var(--borde); border-radius: 8px; background: var(--panel); user-select: none; }
+  details.menu > summary::-webkit-details-marker { display: none; }
+  details.menu[open] > summary { border-color: var(--acento); }
+  .caja-menu { position: absolute; right: 0; top: calc(100% + 6px); background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 10px; min-width: 240px; box-shadow: 0 8px 24px rgba(0,0,0,.12); z-index: 10; }
+  .caja-menu label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13.5px; margin: 6px 0; }
+  .caja-menu .lista button { display: flex; justify-content: space-between; width: 100%; margin: 3px 0; text-align: left; }
+  .abajo-menu .caja-menu { top: auto; bottom: calc(100% + 6px); }
+
+  /* guía de la primera vez */
+  #guia { display: flex; gap: 10px 22px; align-items: center; flex-wrap: wrap; margin: 12px 18px 0; padding: 10px 14px; background: var(--acento-2); border-radius: 10px; font-size: 14px; }
+  #guia ol { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0; padding-left: 18px; }
+  #guia li::marker { font-weight: 700; color: var(--acento); }
+
+  /* tres columnas */
+  main { display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; gap: 14px; padding: 14px 18px; max-width: 1600px; margin: 0 auto; align-items: start; }
+  @media (max-width: 1200px) { main { grid-template-columns: 300px minmax(0, 1fr); } #col3 { grid-column: 1 / -1; } }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; }
+  .panel + .panel { margin-top: 12px; }
+  h2 { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 0 0 10px; }
+  h2 .n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--acento); color: #fff; font-size: 12.5px; }
+  h2 .extra { margin-left: auto; font-weight: normal; }
+  h3 { font-size: 13px; margin: 12px 0 6px; color: var(--suave); font-weight: 600; }
+
+  /* datos */
+  .dato { display: grid; grid-template-columns: 1fr 118px; gap: 6px; align-items: center; margin: 6px 0; }
+  .dato label { font-size: 14px; }
+  .dato.libre { grid-template-columns: minmax(0, 1fr) 92px 24px; }
+  .dato input.m { width: 100%; min-width: 0; }
+  .campo-u { display: flex; align-items: center; border: 1px solid var(--borde); border-radius: 7px; background: var(--campo); }
+  .campo-u:focus-within { outline: 2px solid var(--acento); outline-offset: 1px; }
+  .campo-u input { border: 0; background: none; width: 100%; min-width: 0; text-align: right; outline: none; }
+  .campo-u span { padding: 0 8px 0 2px; color: var(--suave); font-size: 13px; min-width: 14px; }
+  .dato.con-error .campo-u, .dato.con-error input { border-color: var(--mal); }
+  .err { grid-column: 1 / -1; color: var(--mal); font-size: 12px; margin-top: -3px; }
+  .chip { display: inline-flex; gap: 6px; align-items: center; margin: 4px 6px 0 0; padding: 3px 10px; border-radius: 999px; background: var(--acento-2); font-size: 12.5px; color: var(--suave); }
+  button.x { border: 0; color: var(--suave); font-size: 17px; padding: 0 4px; background: none; }
+  details.av summary { cursor: pointer; font-size: 13.5px; color: var(--acento); margin-top: 12px; }
+  details.av label { display: flex; flex-direction: column; font-size: 12.5px; color: var(--suave); gap: 3px; margin-top: 8px; }
+  #puntos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  #puntos input { width: 50px; text-align: center; font-weight: 600; }
+
+  /* dibujo y pasos */
+  #lienzo { display: flex; justify-content: center; min-height: 280px; }
+  #lienzo svg { max-width: 100%; height: auto; }
+  .pasos { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  #paso-info { min-width: 110px; text-align: center; font-size: 14px; }
+  .interruptores { display: flex; gap: 6px 18px; flex-wrap: wrap; justify-content: center; margin-top: 8px; font-size: 13px; color: var(--suave); }
+  .interruptores label { display: flex; gap: 5px; align-items: center; }
+  #leyenda { display: block; margin: 8px auto 0; width: min(360px, 100%); text-align: center; }
+  #avisos { font-size: 13.5px; margin-top: 8px; } #avisos > div { margin-top: 3px; }
+
+  /* resolución */
+  .fila-r { display: grid; grid-template-columns: 64px 1fr 22px 30px; gap: 6px; align-items: center; margin: 5px 0; }
+  .fila-r .nom { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", serif; font-size: 17px; }
+  .fila-r input { width: 100%; }
+  .fila-r .ver { text-align: center; font-size: 16px; }
+  .fila-r .ojo { padding: 2px 5px; font-size: 14px; }
+  .fila-r .val { grid-column: 2 / -1; font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", serif; color: var(--suave); font-size: 14px; margin-top: -3px; }
+  details.otras > summary { cursor: pointer; font-size: 13.5px; color: var(--acento); margin-top: 8px; }
+  .paso { margin: 6px 0; font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", serif; font-size: 16px; }
+  .paso.nuevo { background: #fff6d6; border-radius: 6px; }
+  .paso .tx, h4 .tx { font-family: system-ui, sans-serif; font-size: 12.5px; color: var(--suave); }
+  h4 { margin: 10px 0 2px; font-size: 13px; color: var(--acento); }
+  .fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 2px; }
+  .fr > span:first-child { border-bottom: 1px solid currentColor; padding: 0 3px; } .fr > span:last-child { padding: 0 3px; }
+  .ol { text-decoration: overline; }
+  .griega { font-size: calc(1em + 2px); }
+
+  /* barra fija de salida */
+  #barra { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 9px 18px; background: var(--panel); border-top: 1px solid var(--borde); box-shadow: 0 -4px 16px rgba(0,0,0,.05); }
+  #barra .sep { width: 1px; height: 26px; background: var(--borde); }
+  #barra label { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--suave); }
+  #instr { font-size: 12.5px; color: var(--suave); flex: 1 1 260px; }
+  #aviso { position: fixed; left: 50%; bottom: 66px; transform: translateX(-50%); background: #1d1d1b; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13.5px; max-width: min(640px, 92vw); z-index: 20; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #aviso.ver { opacity: .95; }
+
+  /* paneles laterales */
+  .lateral { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 96vw); background: var(--panel); border-left: 1px solid var(--borde); box-shadow: -10px 0 30px rgba(0,0,0,.12); z-index: 15; padding: 16px 18px 80px; overflow-y: auto; transform: translateX(105%); transition: transform .2s; }
+  .lateral.abierto { transform: none; }
+  .lateral .cab-l { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .lateral .cab-l h2 { margin: 0; }
+  .lateral .cab-l .cerrar { margin-left: auto; }
+  #codigo { width: 100%; min-height: 300px; font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 12px; white-space: pre; }
+  .nota { border: 1px solid var(--borde); border-radius: 8px; padding: 8px; margin-top: 8px; background: var(--campo); }
+  .nota.activa { border-color: var(--acento); }
+  .nota .cab { display: flex; gap: 8px; margin-bottom: 6px; } .nota .cab input { flex: 1; font-weight: 600; }
+  .nota textarea { width: 100%; min-height: 130px; resize: vertical; font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 13.5px; }
+  .formulas { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .ficha { border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; background: var(--campo); }
+  .ficha h4 { margin: 0 0 6px; font-size: 14px; } .ficha p, .ficha li { margin: 3px 0; font-size: 14px; } .ficha ol { margin: 4px 0; padding-left: 20px; }
+  .f { font-family: "Latin Modern Math", "STIX Two Math", "Cambria Math", serif; font-size: 16px; }
+  .ficha table { border-collapse: collapse; font-size: 13px; } .ficha th, .ficha td { border: 1px solid var(--borde); padding: 2px 5px; text-align: center; vertical-align: middle; }
+  .ficha .fr { font-size: 15px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="/" title="Volver a Obsedium Tools" style="color:inherit;text-decoration:none">← </a>Taller de triángulos</h1>
+  <div id="figuras" role="group" aria-label="Figura"></div>
+  <div class="derecha">
+    <details class="menu" id="m-figuras"><summary>Mis figuras ▾</summary>
+      <div class="caja-menu">
+        <button id="b-guardar" class="pri" style="width:100%">Guardar esta figura…</button>
+        <div class="lista" id="lista-figuras"></div>
+      </div>
+    </details>
+    <button id="b-formulas">Fórmulas</button>
+    <details class="menu" id="m-ajustes"><summary title="Ajustes">⚙</summary>
+      <div class="caja-menu">
+        <label>Decimales <select id="o-dec"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+        <label>Valores exactos (10√3) <input type="checkbox" id="o-exactos"></label>
+        <label>Tamaño de letra del dibujo <input type="range" id="o-letra" min="11" max="20" step="1"></label>
+        <label>Mostrar la guía de inicio <button id="b-guia-ver">Mostrar</button></label>
+      </div>
+    </details>
+  </div>
+</header>
+
+<div id="guia" hidden>
+  <strong>Cómo se usa:</strong>
+  <ol><li>Elige la figura arriba</li><li>Escribe los datos que da el ejercicio</li><li>Resuelve y escribe tus respuestas: se marcan ✓ o ✗</li><li>Copia a LyX o descarga la imagen (barra de abajo)</li></ol>
+  <button id="b-guia" class="pri" style="margin-left:auto">Entendido</button>
+</div>
+
+<main>
+  <div id="col1">
+    <section class="panel">
+      <h2><span class="n">1</span> Datos <label class="extra suave">Unidad <input type="text" id="o-unidad" size="3" placeholder="m" aria-label="Unidad de longitud"></label></h2>
+      <div id="datos"></div>
+      <div id="fijos"></div>
+      <button id="b-dato" style="margin-top:8px">+ Otro dato</button>
+      <p class="suave" style="margin:6px 0 0">Deja en blanco lo que no sabes.</p>
+      <details class="av" id="personalizar">
+        <summary>Personalizar la figura</summary>
+        <label>Nombres de los puntos <span id="puntos"></span></label>
+        <label>Triángulos (en sentido antihorario, separados por coma) <input type="text" id="a-tri" placeholder="PQS, QRS"></label>
+        <label>Rectas (puntos alineados, en orden; la primera es el suelo) <input type="text" id="a-rectas" placeholder="PQR"></label>
+        <label>Nombres de medidas <input type="text" id="a-alias" placeholder="RS=H, QR=x"></label>
+        <p class="suave">Otros datos se escriben con dos letras para un lado (PQ) y tres con el vértice al medio para un ángulo (∠QPS). Si un triángulo sale al revés, escribe sus puntos en el otro orden.</p>
+      </details>
+    </section>
+  </div>
+
+  <div id="col2">
+    <section class="panel">
+      <h2><span class="n">2</span> Dibujo <span class="extra suave">clic en un punto para renombrarlo</span></h2>
+      <div id="lienzo" aria-live="polite"></div>
+      <div class="pasos" role="group" aria-label="Solución paso a paso">
+        <button id="b-ant" class="icono" title="Paso anterior" aria-label="Paso anterior">◀</button>
+        <span id="paso-info"></span>
+        <button id="b-sig" class="icono pri" title="Siguiente paso" aria-label="Siguiente paso">▶</button>
+        <button id="b-todo">Ver todo</button>
+        <button id="b-ocultar">Ocultar</button>
+      </div>
+      <div class="interruptores">
+        <label id="fila-dep"><input type="checkbox" id="o-dep"> Ángulos de depresión</label>
+        <label><input type="checkbox" id="o-metodo"> Ángulos del cálculo en rojo</label>
+      </div>
+      <input type="text" id="leyenda" placeholder="Leyenda bajo el dibujo (opcional)" aria-label="Leyenda">
+      <div id="avisos" role="status"></div>
+    </section>
+  </div>
+
+  <div id="col3">
+    <section class="panel">
+      <h2><span class="n">3</span> Tu resolución <span class="extra suave" id="marcador"></span></h2>
+      <h3>Lo que se pide</h3>
+      <div id="pide"></div>
+      <details class="otras" id="otras"><summary id="otras-t">Otras medidas</summary><div id="otras-lista"></div></details>
+      <details class="av"><summary>Escribir respuestas a mano</summary>
+        <label>nombre=número; nombre=número <input type="text" id="resp-libre" placeholder="PQS=120; PS=34,64"></label>
+      </details>
+      <h3>Desarrollo</h3>
+      <div id="pasos-lista"><p class="suave">Usa ▶ bajo el dibujo para ver el cálculo paso a paso.</p></div>
+    </section>
+  </div>
+</main>
+
+<div id="barra">
+  <label>Llevar a LyX como
+    <select id="exp-formato"><option value="tikz">dibujo (TikZ)</option><option value="plugin">comando del plugin</option><option value="latex">desarrollo (LaTeX)</option></select>
+  </label>
+  <button id="b-copiar" class="pri">📋 Copiar para LyX</button>
+  <button id="b-codigo">Ver código</button>
+  <span id="instr"></span>
+  <span class="sep"></span>
+  <details class="menu abajo-menu"><summary>⬇ Imagen</summary>
+    <div class="caja-menu">
+      <button id="b-png" class="pri" style="width:100%">Descargar PNG</button>
+      <button id="b-svg" style="width:100%;margin-top:6px">Descargar SVG</button>
+      <label>Incluir el desarrollo <input type="checkbox" id="x-condes"></label>
+    </div>
+  </details>
+  <label>Tamaño <input type="number" id="x-tam" min="20" max="200" step="5" style="width:66px" placeholder="100"> %</label>
+  <span class="sep"></span>
+  <button id="b-notas">📝 Notas</button>
+</div>
+<div id="aviso" role="status"></div>
+
+<aside class="lateral" id="l-codigo" aria-label="Código">
+  <div class="cab-l"><h2>Código para LyX</h2><button class="cerrar" data-cerrar>Cerrar ✕</button></div>
+  <p class="suave" id="codigo-instr"></p>
+  <textarea id="codigo" readonly aria-label="Código"></textarea>
+  <p><button id="b-copiar2" class="pri">Copiar</button></p>
+</aside>
+<aside class="lateral" id="l-notas" aria-label="Notas">
+  <div class="cab-l"><h2>Notas de esta figura</h2><button class="cerrar" data-cerrar>Cerrar ✕</button></div>
+  <p><button id="b-anotar" class="pri">Pasar datos y resultados a la nota marcada</button> <button id="b-nota">+ Nota</button> <button id="b-notas-md">Bajar .md</button></p>
+  <div id="lista-notas"></div>
+</aside>
+<aside class="lateral" id="l-formulas" aria-label="Fórmulas">
+  <div class="cab-l"><h2>Fórmulas</h2><button class="cerrar" data-cerrar>Cerrar ✕</button></div>
+  <div id="plegable">
+
+      <div class="formulas">
+        <div class="ficha">
+          <h4>Base</h4>
+          <p class="f">α + β + γ = 180°</p>
+          <p>a frente a α · b frente a β · c frente a γ</p>
+          <p><b>Par</b> (lado + su ángulo opuesto) → <b>seno</b>. Sin par → <b>coseno</b>.</p>
+          <p class="f"><span class="fr"><span>sen α</span><span>a</span></span> = <span class="fr"><span>sen β</span><span>b</span></span> = <span class="fr"><span>sen γ</span><span>c</span></span></p>
+          <p class="f">a² = b² + c² − 2·b·c·cos α</p>
+          <p class="f">b² = a² + c² − 2·a·c·cos β</p>
+          <p class="f">c² = a² + b² − 2·a·b·cos γ</p>
+        </div>
+        <div class="ficha">
+          <h4>LLL · 3 lados</h4>
+          <ol>
+            <li>Coseno → ángulo frente al lado mayor (cos⁻¹)</li>
+            <li>Coseno otra vez → un 2º ángulo</li>
+            <li>Suma → 3º ángulo</li>
+          </ol>
+          <p class="f">cos α = <span class="fr"><span>b² + c² − a²</span><span>2·b·c</span></span></p>
+          <p class="f">cos β = <span class="fr"><span>a² + c² − b²</span><span>2·a·c</span></span></p>
+          <p class="f">cos γ = <span class="fr"><span>a² + b² − c²</span><span>2·a·b</span></span></p>
+          <p>Ningún lado puede medir más que la suma de los otros dos.</p>
+        </div>
+        <div class="ficha">
+          <h4>LAL · 2 lados + ángulo entre ellos</h4>
+          <ol>
+            <li>Coseno → lado que falta, y la raíz</li>
+            <li>Seno → ángulo frente al lado menor (siempre agudo)</li>
+            <li>Suma → 3º ángulo</li>
+          </ol>
+          <p class="f">con b, c, α: a² = b² + c² − 2·b·c·cos α</p>
+          <p class="f">si b &lt; c: sen β = <span class="fr"><span>b·sen α</span><span>a</span></span></p>
+        </div>
+        <div class="ficha">
+          <h4>ALA / AAL · 2 ángulos + 1 lado</h4>
+          <ol>
+            <li>Suma → 3º ángulo = 180° − los dos dados</li>
+            <li>Seno → cada lado que falta</li>
+          </ol>
+          <p class="f">con a: &nbsp;b = <span class="fr"><span>a·sen β</span><span>sen α</span></span> &nbsp; c = <span class="fr"><span>a·sen γ</span><span>sen α</span></span></p>
+        </div>
+        <div class="ficha">
+          <h4>LLA · 2 lados + ángulo NO entre ellos</h4>
+          <ol>
+            <li>Seno → ángulo frente al otro lado (sen⁻¹). Si sen &gt; 1: no existe.</li>
+            <li>Ambiguo: 180° − ese ángulo también sirve si sumado al dado da menos de 180°.</li>
+            <li>Suma → 3º ángulo · Seno → último lado</li>
+          </ol>
+          <p class="f">con a, b, α: sen β = <span class="fr"><span>b·sen α</span><span>a</span></span></p>
+        </div>
+        <div class="ficha">
+          <h4>Triángulo rectángulo · elevación y depresión</h4>
+          <p class="f">sen θ = <span class="fr"><span>opuesto</span><span>hipotenusa</span></span> &nbsp; cos θ = <span class="fr"><span>adyacente</span><span>hipotenusa</span></span></p>
+          <p class="f">tan θ = <span class="fr"><span>opuesto</span><span>adyacente</span></span></p>
+          <p><b>Elevación:</b> desde la horizontal hacia arriba, hasta el objeto. <b>Depresión:</b> desde la horizontal hacia abajo. Son iguales (alternos internos).</p>
+          <p>Si el observador tiene altura, se suma al final (el volantín).</p>
+        </div>
+        <div class="ficha">
+          <h4>Doble triángulo</h4>
+          <ol>
+            <li>Triángulo oblicuo PQS: ∠Q = 180° − elevación en Q; ∠S = elev. Q − elev. P.</li>
+            <li>Teorema del seno: <span class="f">QS = <span class="fr"><span>PQ · sen P</span><span>sen S</span></span></span></li>
+            <li>Rectángulo QRS: <span class="f">H = QS · sen Q</span>, <span class="f">x = QS · cos Q</span></li>
+            <li>Distancia total = x + PQ</li>
+          </ol>
+          <p>Comprobación: <span class="f">H = <span class="fr"><span>d · tan P · tan Q</span><span>tan Q − tan P</span></span></span></p>
+        </div>
+        <div class="ficha">
+          <h4>Razones y valores exactos</h4>
+          <table>
+            <tr><th></th><th>0°</th><th>30°</th><th>45°</th><th>60°</th><th>90°</th></tr>
+            <tr><th>sen</th><td>0</td><td><span class="fr"><span>1</span><span>2</span></span></td><td><span class="fr"><span>√2</span><span>2</span></span></td><td><span class="fr"><span>√3</span><span>2</span></span></td><td>1</td></tr>
+            <tr><th>cos</th><td>1</td><td><span class="fr"><span>√3</span><span>2</span></span></td><td><span class="fr"><span>√2</span><span>2</span></span></td><td><span class="fr"><span>1</span><span>2</span></span></td><td>0</td></tr>
+            <tr><th>tan</th><td>0</td><td><span class="fr"><span>√3</span><span>3</span></span></td><td>1</td><td>√3</td><td>✕</td></tr>
+          </table>
+          <p class="f">tan = <span class="fr"><span>sen</span><span>cos</span></span> &nbsp; cotan = <span class="fr"><span>cos</span><span>sen</span></span></p>
+          <p class="f">cosec = <span class="fr"><span>1</span><span>sen</span></span> &nbsp; sec = <span class="fr"><span>1</span><span>cos</span></span> &nbsp; cotan = <span class="fr"><span>1</span><span>tan</span></span></p>
+          <p>0,87 = <span class="f"><span class="fr"><span>√3</span><span>2</span></span></span> · 0,71 = <span class="f"><span class="fr"><span>√2</span><span>2</span></span></span> · 0,58 = <span class="f"><span class="fr"><span>√3</span><span>3</span></span></span> · 1,73 = √3</p>
+        </div>
+      </div>
+    
+    
+  </div>
+</aside>
+
+<script>
+// ============================================================ MOTOR (puro: sin DOM)
+// Modelo de figura, motor por propagación, ubicación en el plano y formato de pasos (HTML y LaTeX).
+const rad = g => g * Math.PI / 180, grad = r => r * 180 / Math.PI;
+const sind = g => Math.sin(rad(g)), cosd = g => Math.cos(rad(g)), tand = g => Math.tan(rad(g));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- nombres
+const GRIEGAS = { alpha: "α", alfa: "α", beta: "β", gamma: "γ", gama: "γ", theta: "θ", teta: "θ", delta: "δ", phi: "φ", varphi: "φ" };
+const TEX_GRIEGA = { "α": "\\alpha", "β": "\\beta", "γ": "\\gamma", "θ": "\\theta", "δ": "\\delta", "φ": "\\varphi" };
+function uni(s) { return String(s).replace(/\\([a-zA-Z]+)/g, (m, w) => GRIEGAS[w] || w).replace(/[{}]/g, "").trim(); }
+function clave(s) { // para comparar lo que escribe el usuario
+  let t = uni(s).replace(/[\s∠]/g, "");
+  for (const [w, g] of Object.entries(GRIEGAS)) if (t.toLowerCase() === w) t = g;
+  return t;
+}
+// "PQS", "P Q S" o "P1 Q S" -> lista de nombres de puntos
+function partirPuntos(s) {
+  const t = String(s).trim();
+  if (!t) return [];
+  return /\s/.test(t) ? t.split(/\s+/) : [...t];
+}
+
+// ---------- números
+const OPC = { dec: 2, exactos: false, unidad: "" };
+function fmt(x, dec = OPC.dec) {
+  const f = 10 ** dec, v = Math.round(x * f) / f;
+  return String(Object.is(v, -0) ? 0 : v).replace(".", ",");
+}
+// Valor exacto sencillo: entero, o racional·√2 / racional·√3 con denominador chico
+function exacto(v) {
+  const racional = x => { for (let q = 1; q <= 12; q++) { const p = Math.round(x * q); if (Math.abs(p / q - x) < 1e-9 * Math.max(1, Math.abs(x))) return [p, q]; } return null; };
+  const r0 = racional(v); if (r0) return null; // ya es "limpio": no hace falta
+  for (const k of [2, 3]) {
+    const r = racional(v / Math.sqrt(k)); if (!r || r[0] === 0) continue;
+    const [p, q] = r, a = Math.abs(p) === 1 ? (p < 0 ? "−" : "") : String(p).replace("-", "−");
+    const aT = Math.abs(p) === 1 ? (p < 0 ? "-" : "") : String(p);
+    return q === 1 ? { h: `${a}√${k}`, t: `${aT}\\sqrt{${k}}` }
+                   : { h: `${a}√${k}/${q}`, t: `\\frac{${aT}\\sqrt{${k}}}{${q}}` };
+  }
+  return null;
+}
+
+// ---------- partes de un paso: se escriben una vez y salen como HTML o como LaTeX
+// string · {nm} nombre · {ol} segmento · {ang} ángulo "QPS" · {tx} texto · {fr:[a,b]} fracción ·
+// {n} número · {n4} con 4 decimales · {r, deg} resultado (con valor exacto si se pidió)
+const P = {
+  nm: s => ({ nm: s }), ol: s => ({ ol: s }), ang: s => ({ ang: s }), tx: s => ({ tx: s }),
+  fr: (a, b) => ({ fr: [[].concat(a), [].concat(b)] }), n: v => ({ n: v }), r: (v, deg) => ({ r: v, deg: !!deg }),
+};
+const TEX_SIMB = [["·", "\\cdot "], ["−", "-"], ["⇒", "\\;\\Rightarrow\\; "], ["≈", "\\approx "], ["²", "^{2}"], ["△", "\\triangle "],
+  ["sen ", "\\operatorname{sen} "], ["cos ", "\\cos "], ["tan ", "\\tan "]];
+function texDe(s) {
+  let t = s;
+  for (const [a, b] of TEX_SIMB) t = t.split(a).join(b);
+  t = t.replace(/°/g, "^{\\circ}");
+  for (const [g, c] of Object.entries(TEX_GRIEGA)) t = t.split(g).join(c + " ");
+  return t;
+}
+function aHtml(partes) {
+  return partes.map(p => {
+    if (typeof p === "string") return esc(p);
+    if (p.nm != null) return esc(uni(p.nm));
+    if (p.ol != null) return `<span class="ol">${esc(uni(p.ol))}</span>`;
+    if (p.ang != null) return "∠" + esc(uni(p.ang));
+    if (p.tx != null) return `<span class="tx">${esc(p.tx)}</span>`;
+    if (p.fr) return `<span class="fr"><span>${aHtml(p.fr[0])}</span><span>${aHtml(p.fr[1])}</span></span>`;
+    if (p.n != null) return fmt(p.n);
+    if (p.n4 != null) return fmt(p.n4, 4);
+    if (p.r != null) {
+      const e = !p.deg && OPC.exactos ? exacto(p.r) : null;
+      return `<b>${e ? e.h + " ≈ " : ""}${fmt(p.r)}${p.deg ? "°" : ""}</b>`;
+    }
+    return "";
+  }).join("");
+}
+function aTex(partes) {
+  const num = (v, d) => fmt(v, d).replace(",", "{,}");
+  return partes.map(p => {
+    if (typeof p === "string") return texDe(p);
+    if (p.nm != null) return texDe(uni(p.nm));
+    if (p.ol != null) return `\\overline{${uni(p.ol)}}`;
+    if (p.ang != null) return `\\angle ${uni(p.ang)}`;
+    if (p.tx != null) return `\\text{${p.tx}}`;
+    if (p.fr) return `\\frac{${aTex(p.fr[0])}}{${aTex(p.fr[1])}}`;
+    if (p.n != null) return num(p.n);
+    if (p.n4 != null) return num(p.n4, 4);
+    if (p.r != null) {
+      const e = !p.deg && OPC.exactos ? exacto(p.r) : null;
+      return `${e ? e.t + "\\approx " : ""}${num(p.r)}${p.deg ? "^{\\circ}" : ""}`;
+    }
+    return "";
+  }).join("");
+}
+
+// ---------- triángulo suelto: mismo algoritmo que el módulo de LyX (LLL, LAL, AAL/ALA, LLA ambiguo)
+// s, t: lados y ángulos (null = incógnita); el lado i está frente al vértice i.
+// N: { s:[parte,parte,parte], t:[parte,...] } nombres para el desarrollo.
+function resolverTriangulo(s0, t0, N) {
+  const s = s0.slice(), t = t0.slice(), pasos = [];
+  const ks = s.map(v => v != null), kt = t.map(v => v != null);
+  const ns = ks.filter(Boolean).length, nt = kt.filter(Boolean).length;
+  const sig = i => (i + 1) % 3, ant = i => (i + 2) % 3;
+  const S = i => N.s[i], T = i => N.t[i];
+  let nota = "", caso = "";
+  if (ns === 0 || ns + nt < 3) return { error: "faltan datos: se necesitan 3, con al menos un lado." };
+  const angulosPorLados = () => {
+    for (let i = 0; i < 3; i++) if (t[i] == null) {
+      const j = sig(i), k = ant(i);
+      const c = Math.max(-1, Math.min(1, (s[j] ** 2 + s[k] ** 2 - s[i] ** 2) / (2 * s[j] * s[k])));
+      t[i] = grad(Math.acos(c));
+      pasos.push({ p: ["cos ", T(i), " = ", P.fr([S(j), "² + ", S(k), "² − ", S(i), "²"], ["2·", S(j), "·", S(k)]), " = ",
+        P.fr([P.n(s[j]), "² + ", P.n(s[k]), "² − ", P.n(s[i]), "²"], ["2·", P.n(s[j]), "·", P.n(s[k])]), " = ", { n4: c }, " ⇒ ", T(i), " = ", P.r(t[i], 1)], da: ["t" + i] });
+    }
+  };
+  const tercerAngulo = () => {
+    for (let i = 0; i < 3; i++) if (t[i] == null) {
+      t[i] = 180 - t[sig(i)] - t[ant(i)];
+      pasos.push({ p: [T(i), " = 180° − ", T(sig(i)), " − ", T(ant(i)), " = 180° − ", P.n(t[sig(i)]), "° − ", P.n(t[ant(i)]), "° = ", P.r(t[i], 1)], da: ["t" + i] });
+    }
+  };
+  const ladosPorSeno = i => {
+    for (let j = 0; j < 3; j++) if (s[j] == null) {
+      s[j] = s[i] * sind(t[j]) / sind(t[i]);
+      if (Math.abs(t[i] - 90) < 1e-9) // hipotenusa conocida: cateto = hipotenusa · sen (ángulo opuesto)
+        pasos.push({ p: [S(j), " = ", S(i), "·sen ", T(j), " = ", P.n(s[i]), "·sen ", P.n(t[j]), "° = ", P.r(s[j])], da: ["s" + j] });
+      else
+        pasos.push({ p: [S(j), " = ", P.fr([S(i), "·sen ", T(j)], ["sen ", T(i)]), " = ", P.fr([P.n(s[i]), "·sen ", P.n(t[j]), "°"], ["sen ", P.n(t[i]), "°"]), " = ", P.r(s[j])], da: ["s" + j] });
+    }
+  };
+  if (ns === 3) {
+    caso = "tres lados: teorema del coseno";
+    for (let i = 0; i < 3; i++) if (!(s[i] < s[sig(i)] + s[ant(i)])) return { error: "ningún lado puede medir más que la suma de los otros dos." };
+    angulosPorLados();
+  } else if (nt >= 2) {
+    caso = "dos ángulos y un lado: suma de ángulos y teorema del seno";
+    tercerAngulo();
+    if (!t.every(v => v > 0)) return { error: "los ángulos suman 180° o más." };
+    let i = 0; for (let k = 0; k < 3; k++) if (ks[k]) i = k;
+    ladosPorSeno(i);
+  } else {
+    let i = 0; for (let k = 0; k < 3; k++) if (kt[k]) i = k;
+    if (ks[i]) {
+      caso = "dos lados y un ángulo opuesto: teorema del seno";
+      let j = 0; for (let k = 0; k < 3; k++) if (ks[k] && k !== i) j = k;
+      const sj = s[j] * sind(t[i]) / s[i];
+      if (sj > 1.000001) return { error: "estos datos no forman un triángulo (el seno daría más de 1)." };
+      t[j] = grad(Math.asin(Math.min(1, sj)));
+      pasos.push({ p: ["sen ", T(j), " = ", P.fr([S(j), "·sen ", T(i)], [S(i)]), " = ", P.fr([P.n(s[j]), "·sen ", P.n(t[i]), "°"], [P.n(s[i])]), " = ", { n4: sj }, " ⇒ ", T(j), " = ", P.r(t[j], 1)], da: ["t" + j] });
+      const obt = 180 - t[j];
+      if (s[j] > s[i] && obt - t[j] > 0.01 && t[i] + obt < 180) nota = `Caso ambiguo: también existe el triángulo con el ángulo obtuso de ${fmt(obt)}°.`;
+      tercerAngulo();
+      ladosPorSeno(i);
+    } else {
+      caso = "dos lados y el ángulo entre ellos: teorema del coseno";
+      const j = sig(i), k = ant(i);
+      s[i] = Math.sqrt(s[j] ** 2 + s[k] ** 2 - 2 * s[j] * s[k] * cosd(t[i]));
+      pasos.push({ p: [S(i), "² = ", S(j), "² + ", S(k), "² − 2·", S(j), "·", S(k), "·cos ", T(i), " = ", P.n(s[j]), "² + ", P.n(s[k]), "² − 2·", P.n(s[j]), "·", P.n(s[k]), "·cos ", P.n(t[i]), "° = ", P.n(s[i] ** 2), " ⇒ ", S(i), " = ", P.r(s[i])], da: ["s" + i] });
+      angulosPorLados();
+    }
+  }
+  for (let i = 0; i < 3; i++) {
+    if (!(t[i] > 0)) return { error: "los ángulos suman 180° o más." };
+    if (!(s[i] > 0)) return { error: "los lados deben ser mayores que 0." };
+  }
+  return { s, t, pasos, nota, caso };
+}
+
+// ---------- figura
+// fig = { puntos:[...], triangulos:[[A,B,C],...] (antihorario), rectas:[[A,B,C,...],...] (en orden),
+//         alias:{ "s:R|S": "H", "a:P|Q|S": "α", ... }, datos:[{m:"PQ"|"∠QPS"|alias, v:"20"}] }
+function idSeg(a, b) { return "s:" + [a, b].sort().join("|"); }
+// Ángulo en V entre VA y VB. Si V está en una recta con A (o B), todo punto de esa recta del mismo lado
+// da el mismo rayo: se reemplaza por el extremo de la recta. Devuelve null si es un ángulo llano.
+function idAng(fig, a, v, b) {
+  const rayo = e => {
+    for (const r of fig.rectas) {
+      const iv = r.indexOf(v), ie = r.indexOf(e);
+      if (iv >= 0 && ie >= 0) return ie > iv ? r[r.length - 1] : r[0];
+    }
+    return e;
+  };
+  let x = rayo(a), y = rayo(b);
+  if (x === y) return null;
+  for (const r of fig.rectas) { // llano: los dos rayos sobre la misma recta, a lados opuestos
+    const iv = r.indexOf(v);
+    if (iv > 0 && iv < r.length - 1 && r.includes(x) && r.includes(y)) return null;
+  }
+  return "a:" + [x, y].sort().join("|").replace("|", "|" + v + "|");
+}
+const esAng = id => id[0] === "a";
+const piezas = id => id.slice(2).split("|");
+// nombre para mostrar: alias, o el que se registró al usarlo (triángulo o dato), o el canónico
+function nombreDe(fig, id, nombres) {
+  if (fig.alias && fig.alias[id]) return P.nm(fig.alias[id]);
+  if (nombres && nombres.has(id)) return nombres.get(id);
+  const q = piezas(id);
+  return esAng(id) ? P.ang(q.join("")) : P.ol(q.join(""));
+}
+function textoParte(p) { // parte de nombre -> texto plano (para listas y avisos)
+  if (p.nm != null) return uni(p.nm); if (p.ol != null) return uni(p.ol); if (p.ang != null) return "∠" + uni(p.ang); return "";
+}
+// lo que escribe el usuario ("PQ", "∠QPS", "QPS", "H", "alfa") -> id
+function idDeTexto(fig, texto) {
+  const k = clave(texto); if (!k) return null;
+  const pts = fig.puntos;
+  if (fig.alias) for (const [id, al] of Object.entries(fig.alias)) if (clave(al) === k) return id;
+  // separar en nombres de puntos (admite nombres de varios caracteres, probando los más largos primero)
+  const orden = [...pts].sort((a, b) => b.length - a.length), trozos = [];
+  let resto = k;
+  while (resto) {
+    const p = orden.find(n => resto.startsWith(n) || resto.toLowerCase().startsWith(n.toLowerCase()));
+    if (!p) return null;
+    trozos.push(p); resto = resto.slice(p.length);
+  }
+  if (trozos.length === 2 && trozos[0] !== trozos[1]) return idSeg(trozos[0], trozos[1]);
+  if (trozos.length === 3 && new Set(trozos).size === 3) return idAng(fig, trozos[0], trozos[1], trozos[2]);
+  return null;
+}
+
+// ---------- motor por propagación
+function resolverFigura(fig) {
+  const known = new Map(), nombres = new Map(), pasos = [], avisos = [], errores = [];
+  const nom = id => nombreDe(fig, id, nombres);
+  const fijar = (id, v, paso, origen) => {
+    if (!id) return false;
+    if (known.has(id)) {
+      const k = known.get(id);
+      if (Math.abs(k.v - v) > Math.max(0.02, 0.005 * Math.abs(v)))
+        avisos.push(`Los datos no son consistentes: ${textoParte(nom(id))} da ${fmt(k.v)} por un lado y ${fmt(v)} por otro.`);
+      return false;
+    }
+    known.set(id, { v, paso, origen });
+    return true;
+  };
+  // datos
+  const filas = [];
+  for (const d of fig.datos || []) {
+    const vtxt = String(d.v ?? "").replace(/[\s°?]/g, "").replace(",", ".");
+    if (!String(d.m || "").trim() && !vtxt) { filas.push({ ok: true }); continue; }
+    if (!vtxt) { filas.push({ ok: true, vacio: true }); continue; } // incógnita
+    const id = idDeTexto(fig, d.m), v = Number(vtxt);
+    if (!id) { filas.push({ error: `«${d.m}» no está en la figura` }); continue; }
+    if (!Number.isFinite(v) || v <= 0) { filas.push({ error: "no es un número mayor que 0" }); continue; }
+    if (esAng(id) && v >= 180) { filas.push({ error: "un ángulo debe ser menor que 180°" }); continue; }
+    if (d.m && !fig.alias?.[id] && !nombres.has(id)) nombres.set(id, esAng(id) ? P.ang(uni(d.m).replace(/∠/g, "")) : P.ol(uni(d.m)));
+    fijar(id, v, -1, "dato");
+    filas.push({ ok: true, id });
+  }
+  // nombres naturales dentro de cada triángulo
+  // (∠PQS con el vértice al medio en el orden del triángulo; segmentos en el orden de los puntos: PS, no SP)
+  const ordenP = (x, y) => fig.puntos.indexOf(x) <= fig.puntos.indexOf(y) ? x + y : y + x;
+  for (const tr of fig.triangulos) for (let i = 0; i < 3; i++) {
+    const [a, prev, next] = [tr[i], tr[(i + 2) % 3], tr[(i + 1) % 3]];
+    const ia = idAng(fig, prev, a, next); if (ia && !nombres.has(ia)) nombres.set(ia, P.ang(prev + a + next));
+    const is = idSeg(prev, next); if (!nombres.has(is)) nombres.set(is, P.ol(ordenP(prev, next)));
+  }
+  const val = id => known.has(id) ? known.get(id).v : null;
+  const nuevoPaso = (p, da, regla) => { pasos.push({ p, da, regla }); return pasos.length - 1; };
+
+  // reglas sencillas (devuelven true si dedujeron algo)
+  const sumaTriangulos = () => {
+    let hubo = false;
+    for (const tr of fig.triangulos) {
+      const ids = [0, 1, 2].map(i => idAng(fig, tr[(i + 1) % 3], tr[i], tr[(i + 2) % 3]));
+      const vs = ids.map(val), faltan = vs.filter(v => v == null).length;
+      if (faltan !== 1) continue;
+      const i = vs.findIndex(v => v == null), j = (i + 1) % 3, k = (i + 2) % 3, v = 180 - vs[j] - vs[k];
+      if (v <= 0) { errores.push(`en △${tr.join("")} los ángulos suman 180° o más.`); continue; }
+      const n = nuevoPaso([P.tx("En △" + tr.join("") + ": "), nom(ids[i]), " = 180° − ", nom(ids[j]), " − ", nom(ids[k]), " = 180° − ", P.n(vs[j]), "° − ", P.n(vs[k]), "° = ", P.r(v, 1)], [ids[i]], "suma");
+      hubo = fijar(ids[i], v, n, "regla") || hubo;
+    }
+    return hubo;
+  };
+  const suplementos = () => { // V entre dos puntos de una recta, y un rayo a X fuera de ella
+    let hubo = false;
+    for (const r of fig.rectas) for (let iv = 1; iv < r.length - 1; iv++) {
+      const v = r[iv], izq = r[0], der = r[r.length - 1];
+      for (const x of fig.puntos) {
+        if (r.includes(x)) continue;
+        const a = idAng(fig, izq, v, x), b = idAng(fig, x, v, der);
+        if (!a || !b) continue;
+        const [ka, kb] = [val(a), val(b)];
+        if ((ka == null) === (kb == null)) continue;
+        const [dest, orig, vo] = ka == null ? [a, b, kb] : [b, a, ka];
+        const n = nuevoPaso([nom(dest), " = 180° − ", nom(orig), " = 180° − ", P.n(vo), "° = ", P.r(180 - vo, 1), P.tx(" (suplemento)")], [dest], "suplemento");
+        hubo = fijar(dest, 180 - vo, n, "regla") || hubo;
+      }
+    }
+    return hubo;
+  };
+  const adyacentes = () => { // V fuera de una recta que ve A, B, C en orden: ∠AVC = ∠AVB + ∠BVC
+    let hubo = false;
+    for (const r of fig.rectas) for (const v of fig.puntos) {
+      if (r.includes(v)) continue;
+      for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) for (let k = j + 1; k < r.length; k++) {
+        const ac = idAng(fig, r[i], v, r[k]), ab = idAng(fig, r[i], v, r[j]), bc = idAng(fig, r[j], v, r[k]);
+        if (!ac || !ab || !bc) continue;
+        const [x, y, z] = [val(ac), val(ab), val(bc)];
+        if ([x, y, z].filter(q => q == null).length !== 1) continue;
+        let dest, vv, p;
+        if (x == null) { dest = ac; vv = y + z; p = [nom(ac), " = ", nom(ab), " + ", nom(bc), " = ", P.n(y), "° + ", P.n(z), "° = ", P.r(vv, 1)]; }
+        else if (y == null) { dest = ab; vv = x - z; p = [nom(ab), " = ", nom(ac), " − ", nom(bc), " = ", P.n(x), "° − ", P.n(z), "° = ", P.r(vv, 1)]; }
+        else { dest = bc; vv = x - y; p = [nom(bc), " = ", nom(ac), " − ", nom(ab), " = ", P.n(x), "° − ", P.n(y), "° = ", P.r(vv, 1)]; }
+        if (vv <= 0) continue;
+        hubo = fijar(dest, vv, nuevoPaso(p, [dest], "adyacentes"), "regla") || hubo;
+      }
+    }
+    return hubo;
+  };
+  const segmentos = () => { // A, B, C en orden sobre una recta: AC = AB + BC
+    let hubo = false;
+    for (const r of fig.rectas) for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) for (let k = j + 1; k < r.length; k++) {
+      const ac = idSeg(r[i], r[k]), ab = idSeg(r[i], r[j]), bc = idSeg(r[j], r[k]);
+      const [x, y, z] = [val(ac), val(ab), val(bc)];
+      if ([x, y, z].filter(q => q == null).length !== 1) continue;
+      let dest, vv, p;
+      if (x == null) { dest = ac; vv = y + z; p = [nom(ac), " = ", nom(ab), " + ", nom(bc), " = ", P.n(y), " + ", P.n(z), " = ", P.r(vv)]; }
+      else if (y == null) { dest = ab; vv = x - z; p = [nom(ab), " = ", nom(ac), " − ", nom(bc), " = ", P.n(x), " − ", P.n(z), " = ", P.r(vv)]; }
+      else { dest = bc; vv = x - y; p = [nom(bc), " = ", nom(ac), " − ", nom(ab), " = ", P.n(x), " − ", P.n(y), " = ", P.r(vv)]; }
+      if (vv <= 0) { errores.push(`sobre la recta ${r.join("")} las distancias no calzan (${textoParte(nom(dest))} daría ${fmt(vv)}).`); continue; }
+      hubo = fijar(dest, vv, nuevoPaso(p, [dest], "segmentos"), "regla") || hubo;
+    }
+    return hubo;
+  };
+  const resolverUno = () => { // el primer triángulo con lo necesario (3 datos, al menos un lado) y algo por calcular
+    for (const tr of fig.triangulos) {
+      const lados = [0, 1, 2].map(i => idSeg(tr[(i + 1) % 3], tr[(i + 2) % 3]));
+      const angs = [0, 1, 2].map(i => idAng(fig, tr[(i + 1) % 3], tr[i], tr[(i + 2) % 3]));
+      const s = lados.map(val), t = angs.map(val);
+      const ns = s.filter(v => v != null).length, nt = t.filter(v => v != null).length;
+      if (ns + nt === 6 || ns === 0 || ns + nt < 3) continue;
+      const R = resolverTriangulo(s, t, { s: lados.map(nom), t: angs.map(nom) });
+      if (R.error) { errores.push(`en △${tr.join("")}: ${R.error}`); continue; }
+      if (R.nota) avisos.push(`△${tr.join("")}: ${R.nota}`);
+      const cab = nuevoPaso([P.tx(`Triángulo ${tr.join("")}`), P.tx(R.caso ? ` (${R.caso})` : "")], [], "titulo");
+      let hubo = false;
+      for (const q of R.pasos) {
+        const ids = q.da.map(d => d[0] === "s" ? lados[+d[1]] : angs[+d[1]]);
+        const n = nuevoPaso(q.p, ids, "triangulo");
+        ids.forEach((id, z) => { const d = q.da[z]; hubo = fijar(id, d[0] === "s" ? R.s[+d[1]] : R.t[+d[1]], n, "regla") || hubo; });
+      }
+      // lo que el solucionador calculó sin paso propio (no debería pasar) se fija igual
+      lados.forEach((id, i) => fijar(id, R.s[i], cab, "regla")); angs.forEach((id, i) => id && fijar(id, R.t[i], cab, "regla"));
+      if (hubo) return true;
+      pasos.splice(cab); // no aportó nada nuevo
+    }
+    return false;
+  };
+  for (let vuelta = 0; vuelta < 200; vuelta++) {
+    if (errores.length) break;
+    if (suplementos() | sumaTriangulos() | segmentos()) continue;
+    if (resolverUno()) continue;
+    if (medidasDeFigura(fig).every(id => !id || known.has(id))) break; // ya está todo
+    if (adyacentes()) continue; // último recurso: suma o resta de ángulos que comparten vértice
+    break;
+  }
+  return { known, nombres, pasos, avisos, errores, filas, nom };
+}
+
+// ---------- incógnitas: lo que tiene sentido preguntar en esta figura
+function medidasDeFigura(fig) {
+  const ids = [];
+  const add = id => { if (id && !ids.includes(id)) ids.push(id); };
+  for (const tr of fig.triangulos) for (let i = 0; i < 3; i++) add(idSeg(tr[i], tr[(i + 1) % 3]));
+  for (const r of fig.rectas) { for (let i = 0; i + 1 < r.length; i++) add(idSeg(r[i], r[i + 1])); if (r.length > 2) add(idSeg(r[0], r[r.length - 1])); }
+  for (const tr of fig.triangulos) for (let i = 0; i < 3; i++) add(idAng(fig, tr[(i + 1) % 3], tr[i], tr[(i + 2) % 3]));
+  return ids;
+}
+
+// ---------- ubicación en el plano (coordenadas reales)
+function ubicar(fig, known) {
+  const L = id => known.has(id) ? known.get(id).v : null, pos = {};
+  const d = (a, b) => L(idSeg(a, b));
+  const cruz = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const completo = tr => [0, 1, 2].every(i => d(tr[i], tr[(i + 1) % 3]) != null);
+  // punto X a distancia du de U y dv de V, del lado que deja antihorario al triángulo declarado
+  const intersectar = (tr, u, v, x) => {
+    const U = pos[u], V = pos[v], du = d(u, x), dv = d(v, x), D = Math.hypot(V.x - U.x, V.y - U.y);
+    if (du == null || dv == null || !(D > 0)) return null;
+    const a = (du * du - dv * dv + D * D) / (2 * D), h2 = du * du - a * a, h = Math.sqrt(Math.max(0, h2));
+    const ex = (V.x - U.x) / D, ey = (V.y - U.y) / D, base = { x: U.x + a * ex, y: U.y + a * ey };
+    const c1 = { x: base.x - h * ey, y: base.y + h * ex }, c2 = { x: base.x + h * ey, y: base.y - h * ex };
+    const ord = p => { const q = { ...pos, [x]: p }; return cruz(q[tr[0]], q[tr[1]], q[tr[2]]); };
+    return ord(c1) > 0 ? c1 : c2;
+  };
+  // arranque: un triángulo con sus tres lados, apoyado en el suelo (primera recta) si se puede
+  const suelo = fig.rectas[0] || [];
+  let ini = fig.triangulos.find(tr => completo(tr) && tr.filter(p => suelo.includes(p)).length >= 2) || fig.triangulos.find(completo);
+  if (!ini) return { error: "faltan datos para dibujar la figura a escala." };
+  let [u, v] = ini.filter(p => suelo.includes(p));
+  if (!u || !v) [u, v] = ini;
+  else if (suelo.indexOf(u) > suelo.indexOf(v)) [u, v] = [v, u];
+  pos[u] = { x: 0, y: 0 }; pos[v] = { x: d(u, v), y: 0 };
+  const w = ini.find(p => p !== u && p !== v);
+  pos[w] = intersectar(ini, u, v, w);
+  for (let vuelta = 0, hubo = true; hubo && vuelta < 100; vuelta++) {
+    hubo = false;
+    for (const tr of fig.triangulos) {
+      const puestos = tr.filter(p => pos[p]), falta = tr.find(p => !pos[p]);
+      if (puestos.length !== 2 || !falta) continue;
+      const q = intersectar(tr, puestos[0], puestos[1], falta);
+      if (q) { pos[falta] = q; hubo = true; }
+    }
+    for (const r of fig.rectas) { // puntos de una recta con dirección conocida y una distancia
+      const puestos = r.filter(p => pos[p]); if (puestos.length < 2) continue;
+      const a = pos[puestos[0]], b = pos[puestos[puestos.length - 1]], ia = r.indexOf(puestos[0]), ib = r.indexOf(puestos[puestos.length - 1]);
+      const D = Math.hypot(b.x - a.x, b.y - a.y); if (!(D > 0)) continue;
+      const ux = (b.x - a.x) / D * Math.sign(ib - ia), uy = (b.y - a.y) / D * Math.sign(ib - ia); // hacia el final de la recta
+      for (const x of r) {
+        if (pos[x]) continue;
+        for (const y of puestos) {
+          const dd = d(x, y); if (dd == null) continue;
+          const sg = Math.sign(r.indexOf(x) - r.indexOf(y));
+          pos[x] = { x: pos[y].x + sg * dd * ux, y: pos[y].y + sg * dd * uy }; hubo = true; break;
+        }
+      }
+    }
+  }
+  const sin = fig.puntos.filter(p => !pos[p]);
+  if (sin.length) return { error: `faltan datos para ubicar ${sin.join(", ")}.`, pos };
+  // el suelo horizontal, de izquierda a derecha, y la figura sobre él
+  if (suelo.length >= 2) {
+    const a = pos[suelo[0]], b = pos[suelo[suelo.length - 1]], ang = Math.atan2(b.y - a.y, b.x - a.x);
+    for (const p of fig.puntos) { const x = pos[p].x - a.x, y = pos[p].y - a.y; pos[p] = { x: x * Math.cos(-ang) - y * Math.sin(-ang), y: x * Math.sin(-ang) + y * Math.cos(-ang) }; }
+    const fuera = fig.puntos.filter(p => !suelo.includes(p));
+    if (fuera.length && fuera.reduce((z, p) => z + pos[p].y, 0) < 0) for (const p of fig.puntos) pos[p].y = -pos[p].y;
+  } else {
+    const fuera = fig.puntos.filter(p => p !== u && p !== v);
+    if (fuera.length && fuera.reduce((z, p) => z + pos[p].y, 0) < 0) for (const p of fig.puntos) pos[p].y = -pos[p].y;
+  }
+  return { pos };
+}
+// valor de una medida sobre las coordenadas (para medidas que el motor no calculó)
+function valorGeom(id, pos) {
+  const q = piezas(id);
+  if (!esAng(id)) return Math.hypot(pos[q[1]].x - pos[q[0]].x, pos[q[1]].y - pos[q[0]].y);
+  const [a, v, b] = q, a1 = Math.atan2(pos[a].y - pos[v].y, pos[a].x - pos[v].x), a2 = Math.atan2(pos[b].y - pos[v].y, pos[b].x - pos[v].x);
+  let d = Math.abs(grad(a2 - a1)); if (d > 180) d = 360 - d; return d;
+}
+
+// ---------- plantillas
+// boceto: coordenadas de muestra para dibujar la figura (sin escala) cuando todavía faltan datos
+const PLANTILLAS = {
+  triangulo: { nombre: "Triángulo cualquiera", puntos: ["A", "B", "C"], triangulos: [["A", "B", "C"]], rectas: [],
+    alias: { "s:B|C": "a", "s:A|C": "b", "s:A|B": "c", "a:B|A|C": "α", "a:A|B|C": "β", "a:A|C|B": "γ" },
+    datos: [{ m: "a", v: "", et: "Lado a" }, { m: "b", v: "", et: "Lado b" }, { m: "c", v: "", et: "Lado c" }, { m: "α", v: "", et: "Ángulo α" }, { m: "β", v: "", et: "Ángulo β" }, { m: "γ", v: "", et: "Ángulo γ" }],
+    pide: [], boceto: { A: [0, 0], B: [6, 0], C: [2.2, 3.6] }, plugin: "simple", pregunta: true },
+  rectangulo: { nombre: "Triángulo rectángulo", puntos: ["A", "B", "C"], triangulos: [["A", "B", "C"]], rectas: [],
+    alias: { "s:B|C": "a", "s:A|C": "b", "s:A|B": "c", "a:B|A|C": "α", "a:A|B|C": "β" },
+    datos: [{ m: "∠ACB", v: "90", fijo: true }, { m: "a", v: "", et: "Cateto a" }, { m: "b", v: "", et: "Cateto b" }, { m: "c", v: "", et: "Hipotenusa c" }, { m: "α", v: "", et: "Ángulo α" }, { m: "β", v: "", et: "Ángulo β" }], pide: [],
+    boceto: { A: [0, 0], B: [6, 0], C: [4.2, 2.6] }, pregunta: true },
+  torre: { nombre: "Elevación (torre)", puntos: ["P", "R", "S"], triangulos: [["P", "R", "S"]], rectas: [["P", "R"]],
+    alias: { "s:R|S": "H", "s:P|R": "d" },
+    datos: [{ m: "∠SPR", v: "", et: "Elevación en P" }, { m: "d", v: "", et: "Distancia P a la base" }, { m: "H", v: "", et: "Altura" }, { m: "∠PRS", v: "90", fijo: true }],
+    pide: ["H", "d", "PS"], boceto: { P: [0, 0], R: [6, 0], S: [6, 3.5] }, cima: "S", observadores: ["P"] },
+  doble: { nombre: "Doble triángulo", puntos: ["P", "Q", "R", "S"], triangulos: [["P", "Q", "S"], ["Q", "R", "S"]], rectas: [["P", "Q", "R"]],
+    alias: { "s:R|S": "H", "s:Q|R": "x" },
+    datos: [{ m: "∠SPQ", v: "30", et: "Elevación en P (lejos)" }, { m: "∠SQR", v: "60", et: "Elevación en Q (cerca)" }, { m: "PQ", v: "20", et: "Distancia PQ" }, { m: "H", v: "", et: "Altura H (si es dato)" }, { m: "∠QRS", v: "90", fijo: true }],
+    pide: ["H", "PR", "x"], boceto: { P: [0, 0], Q: [4, 0], R: [6, 0], S: [6, 3.5] }, cima: "S", observadores: ["P", "Q"], plugin: "doble" },
+  triple: { nombre: "Triple triángulo", puntos: ["P", "Q", "R", "S", "T"], triangulos: [["P", "Q", "T"], ["Q", "R", "T"], ["R", "S", "T"]], rectas: [["P", "Q", "R", "S"]],
+    alias: { "s:S|T": "H", "s:R|S": "x" },
+    datos: [{ m: "∠TPQ", v: "", et: "Elevación en P (lejos)" }, { m: "∠TQR", v: "", et: "Elevación en Q" }, { m: "∠TRS", v: "", et: "Elevación en R (cerca)" }, { m: "PQ", v: "", et: "Distancia PQ" }, { m: "∠RST", v: "90", fijo: true }], pide: ["H", "QR", "x"],
+    boceto: { P: [0, 0], Q: [2.5, 0], R: [4.3, 0], S: [6, 0], T: [6, 3.5] }, cima: "T", observadores: ["P", "Q", "R"], plugin: "triple" },
+  ambos: { nombre: "Observadores a ambos lados", puntos: ["P", "R", "Q", "S"], triangulos: [["P", "Q", "S"], ["P", "R", "S"], ["R", "Q", "S"]], rectas: [["P", "R", "Q"]],
+    alias: { "s:R|S": "H" },
+    datos: [{ m: "∠SPR", v: "", et: "Elevación en P (izquierda)" }, { m: "∠SQR", v: "", et: "Elevación en Q (derecha)" }, { m: "PQ", v: "", et: "Distancia entre P y Q" }, { m: "∠PRS", v: "90", fijo: true }],
+    pide: ["H", "PR", "RQ"], boceto: { P: [0, 0], R: [3.5, 0], Q: [6, 0], S: [3.5, 3] }, cima: "S", observadores: ["P", "Q"] },
+  libre: { nombre: "Libre", puntos: ["A", "B", "C"], triangulos: [["A", "B", "C"]], rectas: [], alias: {}, datos: [{ m: "", v: "" }, { m: "", v: "" }, { m: "", v: "" }] },
+};
+
+// ============================================================ FIN MOTOR
+
+// ============================================================ DIBUJO (puro: devuelve elementos, SVG y TikZ)
+// Todo se arma como una lista de elementos en coordenadas reales; de ahí salen el SVG y el TikZ,
+// así lo que se ve en el taller es lo mismo que se pega en LyX.
+const COL = { tinta: "#1d1d1b", metodo: "#b3261e", azul: "#1f4fa8", bien: "#1f7a3a", mal: "#b3261e", gris: "#8a8a8a" };
+const TIKZ_COL = { "#1d1d1b": "black", "#b3261e": "red!75!black", "#1f4fa8": "blue!70!black", "#1f7a3a": "green!45!black", "#8a8a8a": "gray" };
+
+// texto enriquecido: lista de trozos {t, ol} a partir de una parte de nombre + resto
+function trozosNombre(parte) {
+  if (parte.ol != null) return [{ t: uni(parte.ol), ol: true }];
+  if (parte.ang != null) return [{ t: "∠" + uni(parte.ang) }];
+  return [{ t: uni(parte.nm ?? "") }];
+}
+const largoTrozos = tr => tr.reduce((a, x) => a + [...x.t].length, 0);
+
+// e: { fig, R (resolverFigura), pos (coordenadas), boceto, resp (Map id -> {v, ok}), vis (id -> bool),
+//      metodo (bool), dep (bool), letra (px), pregunta (bool), plant }
+function armarDibujo(e) {
+  const { fig, R, pos } = e, els = [], unidad = OPC.unidad ? " " + OPC.unidad : "";
+  const pts = fig.puntos.filter(p => pos[p]);
+  const xs = pts.map(p => pos[p].x), ys = pts.map(p => pos[p].y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const esc_ = 460 / Math.max(maxX - minX, maxY - minY, 1e-9); // px por unidad real
+  const px = p => ({ x: (p.x - minX) * esc_, y: (maxY - p.y) * esc_ }); // a pantalla (y hacia abajo)
+  const P_ = n => px(pos[n]);
+  const known = R ? R.known : new Map();
+  const valor = id => known.has(id) ? known.get(id).v : (!e.boceto ? valorGeom(id, pos) : null);
+  const esDato = id => known.has(id) && known.get(id).origen === "dato";
+  const verSol = id => known.has(id) && e.vis(id);
+  const nombre = id => R ? R.nom(id) : nombreDe(fig, id, null);
+  const suelo = fig.rectas[0] || [];
+  const plantilla = e.plant || {};
+  const cima = plantilla.cima && pos[plantilla.cima] ? plantilla.cima : null;
+  const usados = new Set(); // respuestas ya dibujadas en su lugar
+  const resp = id => { const r = e.resp.get(id); if (r) usados.add(id); return r; };
+  const cajas = []; // para que los rótulos no se monten
+  const tam = e.letra || 15;
+  const rotulo = (x, y, trozos, o = {}) => { // o: {color, anc, base, dx, dy, tam, empuje:[ux,uy]}
+    const t = o.tam || tam, w = largoTrozos(trozos) * t * 0.56 + 4, h = t * 1.15;
+    let cx = x, cy = y;
+    const caja = (X, Y) => {
+      const ax = o.anc === "start" ? X : o.anc === "end" ? X - w : X - w / 2;
+      const ay = o.base === "hanging" ? Y : o.base === "auto" ? Y - h : Y - h / 2;
+      return { x1: ax, y1: ay, x2: ax + w, y2: ay + h };
+    };
+    const choca = b => cajas.some(c => b.x1 < c.x2 && c.x1 < b.x2 && b.y1 < c.y2 && c.y1 < b.y2);
+    const [ux, uy] = o.empuje || [0, -1];
+    for (let k = 0; k < 6 && choca(caja(cx, cy)); k++) { cx += ux * 9; cy += uy * 9; }
+    cajas.push(caja(cx, cy));
+    els.push({ t: "texto", x: cx, y: cy, trozos, color: o.color || COL.tinta, anc: o.anc || "middle", base: o.base || "middle", tam: t, it: o.it !== false });
+  };
+  const veredicto = r => r.ok ? " ✓" : " ✗";
+  const colResp = r => r.ok ? COL.bien : COL.mal;
+
+  // --- líneas: aristas de los triángulos y rectas completas
+  const aristas = new Map();
+  for (const tr of fig.triangulos) for (let i = 0; i < 3; i++) { const a = tr[i], b = tr[(i + 1) % 3]; aristas.set(idSeg(a, b), [a, b]); }
+  for (const r of fig.rectas) for (let i = 0; i + 1 < r.length; i++) aristas.set(idSeg(r[i], r[i + 1]), [r[i], r[i + 1]]);
+  let torre = null; // arista cima-base (vertical sobre el suelo)
+  if (cima) for (const p of suelo) if (aristas.has(idSeg(cima, p)) && Math.abs(pos[p].x - pos[cima].x) < 1e-6 * esc_ + 1e-9) torre = [p, cima];
+  if (suelo.length >= 2) {
+    const a = P_(suelo[0]), b = P_(suelo[suelo.length - 1]);
+    els.push({ t: "linea", a: { x: a.x - 22, y: a.y }, b: { x: b.x + 22, y: b.y }, ancho: 1, color: COL.tinta });
+  }
+  for (const [id, [a, b]] of aristas) {
+    if (suelo.includes(a) && suelo.includes(b)) continue;
+    const esTorre = torre && idSeg(...torre) === id;
+    els.push({ t: "linea", a: P_(a), b: P_(b), ancho: esTorre ? 5 : 1.5, color: COL.tinta });
+  }
+  // --- puntos y sus nombres (hacia afuera de sus vecinos)
+  const vecinos = n => [...aristas.values()].filter(([a, b]) => a === n || b === n).map(([a, b]) => a === n ? b : a);
+  for (const n of pts) {
+    const p = P_(n), vs = vecinos(n);
+    let dx = 0, dy = 0; vs.forEach(v => { const q = P_(v), L = Math.hypot(q.x - p.x, q.y - p.y) || 1; dx += (q.x - p.x) / L; dy += (q.y - p.y) / L; });
+    let L = Math.hypot(dx, dy); if (L < 1e-6) { dx = 0; dy = -1; L = 1; }
+    if (suelo.includes(n)) { dx = 0; dy = -1; L = 1; } // en el suelo: el nombre abajo
+    if (suelo.includes(n) || fig.rectas.some(r => r.includes(n))) els.push({ t: "punto", p, nombre: n });
+    else els.push({ t: "punto", p, nombre: n, oculto: true });
+    rotulo(p.x - dx / L * 18, p.y - dy / L * 18, [{ t: uni(n) }], { tam: tam + 2, empuje: [-dx / L, -dy / L] });
+  }
+
+  // --- ángulos: arcos por vértice sin encimarse
+  const arcosV = {};
+  const dirDe = (v, a) => { const p = P_(v), q = P_(a); return (Math.atan2(-(q.y - p.y), q.x - p.x) * 180 / Math.PI + 360) % 360; };
+  const tramo = (v, a, b) => { // arco de a hacia b por el lado menor: [inicio, fin]
+    let a1 = dirDe(v, a), a2 = dirDe(v, b), d = a2 - a1;
+    while (d > 180) d -= 360; while (d <= -180) d += 360;
+    return d >= 0 ? [a1, a1 + d] : [a2, a2 - d];
+  };
+  const radioLibre = (v, a1, a2) => {
+    const lista = arcosV[v] || (arcosV[v] = []);
+    const cruza = (x1, x2, y1, y2) => { const n = z => ((z % 360) + 360) % 360, m = (x1 + x2) / 2, w = (x2 - x1) / 2, m2 = (y1 + y2) / 2, w2 = (y2 - y1) / 2; let d = Math.abs(n(m) - n(m2)); if (d > 180) d = 360 - d; return d < w + w2 - 0.5; };
+    for (let r = 24; ; r += 14) if (!lista.some(q => q.r === r && cruza(a1, a2, q.a1, q.a2))) { lista.push({ a1, a2, r }); return r; }
+  };
+  const dibujarAngulo = (id, texto, color, grosor = 1) => {
+    const [a, v, b] = piezas(id), [a1, a2] = tramo(v, a, b), p = P_(v);
+    if (Math.abs(a2 - a1 - 90) < 0.05 && !texto.forzarTexto) { // recto: cuadradito
+      const u = [cosd(a1), -sind(a1)], w = [cosd(a2), -sind(a2)], k = 12;
+      els.push({ t: "recto", v: p, u, w, k, color, ancho: grosor });
+      // el cuadradito ya dice «90°»: solo lleva texto si es tu respuesta o si se pregunta por el nombre
+      if (texto.trozos && (texto.esResp || e.pregunta)) rotulo(p.x + (u[0] + w[0]) * 22, p.y + (u[1] + w[1]) * 22, texto.trozos, { color, tam: tam - 2, it: false });
+      return;
+    }
+    const r = radioLibre(v, a1, a2), m = (a1 + a2) / 2, extra = a2 - a1 < 22 ? 14 : 0;
+    els.push({ t: "arco", c: p, r, a1, a2, color, ancho: grosor });
+    // el rótulo crece hacia afuera del vértice, según hacia dónde apunta la bisectriz
+    const cm = cosd(m), sm = sind(m), dist = r + 5 + extra;
+    if (texto.trozos) rotulo(p.x + dist * cm, p.y - dist * sm, texto.trozos, { color, tam: tam - 2, it: false,
+      anc: cm > 0.3 ? "start" : cm < -0.3 ? "end" : "middle", base: sm > 0.3 ? "auto" : sm < -0.3 ? "hanging" : "middle", empuje: [cm, -sm] });
+  };
+  const angulos = medidasDeFigura(fig).filter(id => id && esAng(id));
+  const numAng = v => fmt(v) + "°";
+  // depresión: los datos de elevación en los observadores se dibujan en la cima, bajo una horizontal
+  const depObs = e.dep && cima ? new Set((plantilla.observadores || []).map(o => idAng(fig, cima, fig.puntos[plantilla.puntos.indexOf(o)] || o, suelo[suelo.length - 1]))) : new Set();
+  if (depObs.size) { // cada observador: horizontal por la cima hacia su lado y arco hasta la visual
+    const c = P_(cima), lados = {};
+    let k = 0;
+    for (const id of depObs) {
+      if (!known.has(id)) continue;
+      const obs = piezas(id)[1], lado = P_(obs).x < c.x ? -1 : 1, dir = dirDe(cima, obs), r = 30 + 22 * k++;
+      if (!lados[lado]) { lados[lado] = 1; els.push({ t: "linea", a: c, b: { x: c.x + lado * (Math.abs(c.x - P_(obs).x) + 12), y: c.y }, ancho: 1, color: COL.gris }); }
+      const [a1, a2] = lado < 0 ? [180, dir] : [dir, 360];
+      els.push({ t: "arco", c, r, a1, a2, color: COL.tinta, ancho: 1 });
+      rotulo(c.x + lado * (r + 4), c.y - 9, [{ t: numAng(known.get(id).v) }], { tam: tam - 2, base: "auto", anc: lado < 0 ? "end" : "start", it: false });
+    }
+  }
+  for (const id of angulos) {
+    if (depObs.has(id)) { const r = resp(id); if (!r) continue; }
+    const r = resp(id), v = valor(id);
+    const nom = trozosNombre(nombre(id)), conNombre = e.pregunta;
+    if (r) { dibujarAngulo(id, { trozos: [...(conNombre ? [...nom, { t: " = " }] : []), { t: numAng(r.v) + veredicto(r) }], esResp: true }, colResp(r), 2); continue; }
+    if (esDato(id)) { dibujarAngulo(id, { trozos: Math.abs(v - 90) < 1e-9 ? null : [...(conNombre ? [...nom, { t: " = " }] : []), { t: numAng(v) }] }, COL.tinta); continue; }
+    if (verSol(id) && e.metodo) {
+      const azul = cima && piezas(id)[1] === cima && piezas(id).includes(torre ? torre[0] : "");
+      dibujarAngulo(id, { trozos: [...(conNombre ? [...nom, { t: " = " }] : []), { t: numAng(known.get(id).v) }] }, azul ? COL.azul : COL.metodo);
+      continue;
+    }
+    if (conNombre) dibujarAngulo(id, { trozos: [...nom, { t: " = ?" }] }, COL.tinta);
+  }
+
+  // --- lados
+  const textoLado = (id, soloNombre) => { // trozos y color de un lado
+    const r = resp(id), nom = trozosNombre(nombre(id));
+    if (r) return { trozos: [...nom, { t: ` = ${fmt(r.v)}${unidad}${veredicto(r)}` }], color: colResp(r) };
+    if (esDato(id)) return { trozos: [...nom, { t: ` = ${fmt(valor(id))}${unidad}` }], color: COL.tinta };
+    if (verSol(id)) return { trozos: [...nom, { t: ` = ${fmt(known.get(id).v)}${unidad}` }], color: COL.tinta };
+    return { trozos: [...nom, ...(e.pregunta ? [{ t: " = ?" }] : [])], color: COL.tinta, vacio: soloNombre };
+  };
+  // cotas bajo el suelo: tramos y total
+  const yS = suelo.length ? Math.max(...suelo.map(n => P_(n).y)) : 0;
+  const cota = (a, b, fila, id) => {
+    const pa = P_(a), pb = P_(b), y = yS + 40 + 36 * fila, tx = textoLado(id);
+    els.push({ t: "cota", a: { x: pa.x, y }, b: { x: pb.x, y }, color: COL.tinta });
+    rotulo((pa.x + pb.x) / 2, y - 5, tx.trozos, { color: tx.color, base: "auto", tam: tam - 1, empuje: [0, -1] });
+  };
+  if (suelo.length >= 2) {
+    for (let i = 0; i + 1 < suelo.length; i++) cota(suelo[i], suelo[i + 1], 0, idSeg(suelo[i], suelo[i + 1]));
+    if (suelo.length > 2) cota(suelo[0], suelo[suelo.length - 1], 1, idSeg(suelo[0], suelo[suelo.length - 1]));
+  }
+  // las otras aristas: rótulo al costado, del lado opuesto al tercer vértice de su primer triángulo
+  for (const [id, [a, b]] of aristas) {
+    if (suelo.includes(a) && suelo.includes(b)) continue;
+    const pa = P_(a), pb = P_(b), tx = textoLado(id);
+    if (torre && idSeg(...torre) === id) { // la torre: flecha de altura al costado derecho
+      const x = Math.max(pa.x, pb.x) + 20;
+      els.push({ t: "cota", a: { x, y: pa.y }, b: { x, y: pb.y }, color: COL.tinta });
+      rotulo(x + 8, (pa.y + pb.y) / 2, tx.trozos, { color: tx.color, anc: "start", empuje: [1, 0] });
+      continue;
+    }
+    const tr = fig.triangulos.find(t => t.includes(a) && t.includes(b));
+    const tercero = tr ? P_(tr.find(q => q !== a && q !== b)) : { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 + 1 };
+    let nx = -(pb.y - pa.y), ny = pb.x - pa.x; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+    const m = { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 };
+    if ((tercero.x - m.x) * nx + (tercero.y - m.y) * ny > 0) { nx = -nx; ny = -ny; }
+    rotulo(m.x + nx * 16, m.y + ny * 16, tx.trozos, { color: tx.color, anc: nx > 0.35 ? "start" : nx < -0.35 ? "end" : "middle", base: ny > 0.35 ? "hanging" : ny < -0.35 ? "auto" : "middle", empuje: [nx, ny] });
+  }
+  // --- respuestas sin lugar propio (un segmento o ángulo cualquiera)
+  for (const [id, r] of e.resp) {
+    if (usados.has(id) || !pos[piezas(id)[0]]) continue;
+    if (esAng(id)) { dibujarAngulo(id, { trozos: [...trozosNombre(nombre(id)), { t: ` = ${numAng(r.v)}${veredicto(r)}` }], forzarTexto: true, esResp: true }, colResp(r), 2); continue; }
+    const [a, b] = piezas(id), pa = P_(a), pb = P_(b), q = { x: 0.75 * pa.x + 0.25 * pb.x, y: 0.75 * pa.y + 0.25 * pb.y };
+    let nx = -(pb.y - pa.y), ny = pb.x - pa.x; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+    els.push({ t: "linea", a: pa, b: pb, ancho: 1, color: colResp(r), guiones: true });
+    rotulo(q.x + nx * 14, q.y + ny * 14, [...trozosNombre(nombre(id)), { t: ` = ${fmt(r.v)}${unidad}${veredicto(r)}` }], { color: colResp(r), empuje: [nx, ny] });
+  }
+  // marco
+  const xsE = [], ysE = [];
+  for (const q of els) {
+    if (q.t === "texto") { const w = largoTrozos(q.trozos) * q.tam * 0.56; xsE.push(q.anc === "start" ? q.x + w : q.anc === "end" ? q.x - w : q.x - w / 2, q.anc === "start" ? q.x : q.anc === "end" ? q.x : q.x + w / 2); ysE.push(q.y - q.tam, q.y + q.tam); }
+    else if (q.a) { xsE.push(q.a.x, q.b.x); ysE.push(q.a.y, q.b.y); }
+    else if (q.p) { xsE.push(q.p.x); ysE.push(q.p.y); }
+    else if (q.c) { xsE.push(q.c.x - q.r, q.c.x + q.r); ysE.push(q.c.y - q.r, q.c.y + q.r); }
+  }
+  const marco = { x0: Math.min(...xsE) - 14, y0: Math.min(...ysE) - 12, x1: Math.max(...xsE) + 14, y1: Math.max(...ysE) + 12 };
+  return { els, marco, esc: esc_ };
+}
+
+// ---------- a SVG
+function aSVG(d) {
+  const { els, marco } = d, W = Math.ceil(marco.x1 - marco.x0), H = Math.ceil(marco.y1 - marco.y0), o = [];
+  const X = x => (x - marco.x0).toFixed(1), Y = y => (y - marco.y0).toFixed(1);
+  for (const q of els) {
+    if (q.t === "linea") o.push(`<line x1="${X(q.a.x)}" y1="${Y(q.a.y)}" x2="${X(q.b.x)}" y2="${Y(q.b.y)}" stroke="${q.color}" stroke-width="${q.ancho}"${q.guiones ? ' stroke-dasharray="5 4"' : ""}/>`);
+    else if (q.t === "punto") o.push(`<circle cx="${X(q.p.x)}" cy="${Y(q.p.y)}" r="${q.oculto ? 9 : 3.5}" fill="${q.oculto ? "transparent" : COL.tinta}" data-punto="${esc(q.nombre)}" style="cursor:pointer"><title>Clic para renombrar ${esc(q.nombre)}</title></circle>`);
+    else if (q.t === "arco") {
+      const p1 = { x: q.c.x + q.r * cosd(q.a1), y: q.c.y - q.r * sind(q.a1) }, p2 = { x: q.c.x + q.r * cosd(q.a2), y: q.c.y - q.r * sind(q.a2) };
+      o.push(`<path d="M${X(p1.x)},${Y(p1.y)} A${q.r},${q.r} 0 ${q.a2 - q.a1 > 180 ? 1 : 0} 0 ${X(p2.x)},${Y(p2.y)}" fill="none" stroke="${q.color}" stroke-width="${q.ancho}"/>`);
+    } else if (q.t === "recto") {
+      const a = { x: q.v.x + q.u[0] * q.k, y: q.v.y + q.u[1] * q.k }, c = { x: q.v.x + q.w[0] * q.k, y: q.v.y + q.w[1] * q.k }, b = { x: a.x + q.w[0] * q.k, y: a.y + q.w[1] * q.k };
+      o.push(`<path d="M${X(a.x)},${Y(a.y)} L${X(b.x)},${Y(b.y)} L${X(c.x)},${Y(c.y)}" fill="none" stroke="${q.color}" stroke-width="${q.ancho}"/>`);
+    } else if (q.t === "cota") o.push(`<line x1="${X(q.a.x)}" y1="${Y(q.a.y)}" x2="${X(q.b.x)}" y2="${Y(q.b.y)}" stroke="${q.color}" marker-start="url(#fl)" marker-end="url(#fl)"/>`);
+    else if (q.t === "texto") {
+      const cuerpo = q.trozos.map(z => {
+        const g = esc(z.t).replace(/[αβγθδφ]/g, c => `<tspan font-size="${q.tam + 2}">${c}</tspan>`);
+        return z.ol ? `<tspan text-decoration="overline">${g}</tspan>` : g;
+      }).join("");
+      o.push(`<text x="${X(q.x)}" y="${Y(q.y)}" text-anchor="${q.anc}" dominant-baseline="${q.base}" fill="${q.color}" font-size="${q.tam}" font-style="${q.it ? "italic" : "normal"}" style="white-space:pre">${cuerpo}</text>`);
+    }
+  }
+  const defs = `<defs><marker id="fl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9" fill="none" stroke="${COL.tinta}"/></marker></defs>`;
+  return { svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='"Latin Modern Roman", "STIX Two Text", Cambria, Georgia, serif'><rect width="100%" height="100%" fill="#ffffff"/>${defs}${o.join("")}</svg>`, W, H };
+}
+
+// ---------- a TikZ (para pegar en LyX: Insertar → Vista previa, adentro Ctrl+L y pegar)
+function aTikZ(d, cmAncho = 10) {
+  const { els, marco } = d, k = cmAncho / (marco.x1 - marco.x0); // cm por px
+  const X = x => ((x - marco.x0) * k).toFixed(2), Y = y => ((marco.y1 - y) * k).toFixed(2);
+  const col = c => TIKZ_COL[c] || "black";
+  const texTrozos = tr => tr.map(z => {
+    let t = z.t.replace(/ ✓| ✗/g, "").replace(/∠/g, "\\angle ").replace(/°/g, "^{\\circ}").replace(/−/g, "-").replace(/(\d),(\d)/g, "$1{,}$2");
+    for (const [g, c] of Object.entries(TEX_GRIEGA)) t = t.split(g).join(c + " ");
+    return z.ol ? `\\overline{${t}}` : t;
+  }).join("");
+  const ancla = q => {
+    const v = q.base === "hanging" ? "north" : q.base === "auto" ? "south" : "", h = q.anc === "start" ? "west" : q.anc === "end" ? "east" : "";
+    return (v && h ? v + " " + h : v || h || "center");
+  };
+  const o = ["\\begin{tikzpicture}"];
+  for (const q of els) {
+    if (q.t === "linea") o.push(`  \\draw[${col(q.color)}, line width=${(q.ancho * 0.4).toFixed(2)}pt${q.guiones ? ", dashed" : ""}] (${X(q.a.x)},${Y(q.a.y)}) -- (${X(q.b.x)},${Y(q.b.y)});`);
+    else if (q.t === "punto" && !q.oculto) o.push(`  \\fill (${X(q.p.x)},${Y(q.p.y)}) circle (1.5pt);`);
+    else if (q.t === "arco") {
+      const r = (q.r * k).toFixed(2);
+      o.push(`  \\draw[${col(q.color)}${q.ancho > 1 ? ", thick" : ""}] (${(X(q.c.x) * 1 + r * cosd(q.a1)).toFixed(2)},${(Y(q.c.y) * 1 + r * sind(q.a1)).toFixed(2)}) arc[start angle=${q.a1.toFixed(1)}, end angle=${q.a2.toFixed(1)}, radius=${r}];`);
+    } else if (q.t === "recto") {
+      const a = { x: q.v.x + q.u[0] * q.k, y: q.v.y + q.u[1] * q.k }, c = { x: q.v.x + q.w[0] * q.k, y: q.v.y + q.w[1] * q.k }, b = { x: a.x + q.w[0] * q.k, y: a.y + q.w[1] * q.k };
+      o.push(`  \\draw[${col(q.color)}] (${X(a.x)},${Y(a.y)}) -- (${X(b.x)},${Y(b.y)}) -- (${X(c.x)},${Y(c.y)});`);
+    } else if (q.t === "cota") o.push(`  \\draw[<->] (${X(q.a.x)},${Y(q.a.y)}) -- (${X(q.b.x)},${Y(q.b.y)});`);
+    else if (q.t === "texto") o.push(`  \\node[anchor=${ancla(q)}, text=${col(q.color)}, inner sep=1pt, font=${cmAncho < 8 ? "\\scriptsize" : "\\footnotesize"}] at (${X(q.x)},${Y(q.y)}) {$${texTrozos(q.trozos)}$};`);
+  }
+  o.push("\\end{tikzpicture}");
+  return o.join("\n");
+}
+// ============================================================ FIN DIBUJO
+
+// ============================================================ INTERFAZ
+"use strict";
+const $ = id => document.getElementById(id);
+const deep = o => JSON.parse(JSON.stringify(o));
+const guardarLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} };
+const leerLS = (k, def) => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v ?? def; } catch (_) { return def; } };
+const griegas = html => html.replace(/(<[^>]*>)|([αβγθδφ])/g, (m, tag, g) => tag || `<span class="griega">${g}</span>`);
+const ICONOS = { triangulo: "△", rectangulo: "◺", torre: "⊥", doble: "◿", triple: "◿◿", ambos: "⋀", libre: "✎" };
+
+// ---------- estado
+function estadoDesdePlantilla(clave) {
+  const p = PLANTILLAS[clave];
+  return { plantilla: clave, fig: { puntos: [...p.puntos], triangulos: deep(p.triangulos), rectas: deep(p.rectas), alias: { ...p.alias },
+             datos: deep(p.datos).map(d => ({ ...d, bloq: !!d.et || !!d.fijo })) },
+           resp: {}, ver: {}, respLibre: "", pasoVis: 0, dep: false, metodo: true, leyenda: "", notas: [{ titulo: "Nota 1", texto: "" }] };
+}
+let st = leerLS("taller2-estado", null);
+if (!st || !st.fig || !PLANTILLAS[st.plantilla]) st = estadoDesdePlantilla("doble");
+st.ver = st.ver || {};
+st.fig.datos.forEach(d => { if (d.bloq == null) d.bloq = !!d.et || !!d.fijo; }); // estados guardados por la versión anterior
+const opc = Object.assign({ dec: 2, exactos: false, unidad: "", letra: 15, tam: "", conDes: false, exp: "tikz", guiaVista: false }, leerLS("taller2-opciones", {}));
+const aplicarOPC = () => Object.assign(OPC, { dec: opc.dec, exactos: opc.exactos, unidad: opc.unidad });
+aplicarOPC();
+let notaActiva = 0, ultimo = null, pasoAntes = 0;
+const guardar = () => { guardarLS("taller2-estado", st); guardarLS("taller2-opciones", opc); };
+function avisar(t) { const a = $("aviso"); a.textContent = t; a.classList.add("ver"); clearTimeout(avisar.h); avisar.h = setTimeout(() => a.classList.remove("ver"), 6000); }
+
+// ---------- cabecera: figuras, mis figuras, ajustes, guía
+function pintarFiguras() {
+  $("figuras").innerHTML = Object.entries(PLANTILLAS).map(([k, p]) => `<button data-p="${k}" aria-pressed="${k === st.plantilla}" title="${esc(p.nombre)}">${ICONOS[k] || ""} ${esc(p.nombre.replace("Triángulo cualquiera", "Triángulo").replace("Triángulo rectángulo", "Rectángulo").replace("Elevación (torre)", "Torre").replace("Observadores a ambos lados", "Ambos lados"))}</button>`).join("");
+  $("figuras").querySelectorAll("button").forEach(b => b.onclick = () => cambiarPlantilla(b.dataset.p));
+}
+function cambiarPlantilla(k) {
+  if (k === st.plantilla) return;
+  const hay = st.fig.datos.some(d => String(d.v).trim() && !d.fijo) || Object.values(st.resp).some(v => String(v).trim());
+  if (hay && !confirm("¿Cambiar de figura? Se borran los datos y respuestas de la figura actual (las notas se conservan).\nPara no perderla, primero usa «Mis figuras → Guardar».")) return;
+  const notas = st.notas; st = estadoDesdePlantilla(k); st.notas = notas; todo();
+}
+function pintarMisFiguras() {
+  const figs = leerLS("taller2-figuras", {}), nombres = Object.keys(figs).sort();
+  $("lista-figuras").innerHTML = nombres.length ? nombres.map(n => `<button data-abrir="${esc(n)}"><span>${esc(n)}</span><span class="x" data-borrar="${esc(n)}" title="Borrar">🗑</span></button>`).join("") : `<p class="suave">Todavía no guardas ninguna figura.</p>`;
+  $("lista-figuras").querySelectorAll("[data-abrir]").forEach(b => b.onclick = ev => {
+    const figs2 = leerLS("taller2-figuras", {});
+    if (ev.target.dataset.borrar) {
+      const n = ev.target.dataset.borrar; if (!confirm(`¿Borrar «${n}»?`)) return;
+      delete figs2[n]; guardarLS("taller2-figuras", figs2); pintarMisFiguras(); return;
+    }
+    const n = b.dataset.abrir; if (figs2[n] && PLANTILLAS[figs2[n].plantilla]) { st = deep(figs2[n]); st.ver = st.ver || {}; $("m-figuras").open = false; todo(); avisar(`Abierta «${n}».`); }
+  });
+}
+$("b-guardar").onclick = () => {
+  const n = prompt("Nombre para guardar esta figura:", st.nombre || ""); if (!n || !n.trim()) return;
+  const figs = leerLS("taller2-figuras", {}); st.nombre = n.trim(); figs[st.nombre] = deep(st); guardarLS("taller2-figuras", figs);
+  pintarMisFiguras(); avisar(`Guardada como «${st.nombre}».`);
+};
+document.addEventListener("click", ev => { document.querySelectorAll("details.menu[open]").forEach(d => { if (!d.contains(ev.target)) d.open = false; }); });
+$("b-guia").onclick = () => { opc.guiaVista = true; guardar(); $("guia").hidden = true; };
+$("b-guia-ver").onclick = () => { $("guia").hidden = false; $("m-ajustes").open = false; };
+
+// ---------- ajustes e interruptores
+function pintarOpciones() {
+  $("o-dec").value = opc.dec; $("o-exactos").checked = opc.exactos; $("o-unidad").value = opc.unidad; $("o-letra").value = opc.letra;
+  $("o-dep").checked = !!st.dep; $("o-metodo").checked = st.metodo !== false; $("fila-dep").hidden = !PLANTILLAS[st.plantilla].cima;
+  $("x-tam").value = opc.tam; $("x-condes").checked = opc.conDes; $("leyenda").value = st.leyenda || ""; $("exp-formato").value = opc.exp;
+  $("guia").hidden = !!opc.guiaVista;
+}
+for (const [id, fn] of [["o-dec", e => opc.dec = +e.value], ["o-exactos", e => opc.exactos = e.checked], ["o-unidad", e => opc.unidad = e.value.trim()],
+  ["o-letra", e => opc.letra = +e.value], ["o-dep", e => st.dep = e.checked], ["o-metodo", e => st.metodo = e.checked],
+  ["x-tam", e => opc.tam = e.value], ["x-condes", e => opc.conDes = e.checked], ["leyenda", e => st.leyenda = e.value], ["exp-formato", e => opc.exp = e.value]])
+  $(id).addEventListener("input", () => { fn($(id)); aplicarOPC(); if (id === "o-unidad") pintarDatos(); actualizar(); });
+
+// ---------- 1 · datos
+const unidadDe = m => { const id = idDeTexto(st.fig, m); return id && esAng(id) ? "°" : (OPC.unidad || ""); };
+function pintarDatos() {
+  const cont = $("datos"), fijos = [];
+  cont.innerHTML = "";
+  st.fig.datos.forEach((d, i) => {
+    if (d.fijo) { fijos.push(i); return; }
+    const fila = document.createElement("div");
+    fila.dataset.i = i;
+    if (d.bloq) { // dato de la plantilla: etiqueta + valor con su unidad
+      fila.className = "dato";
+      fila.innerHTML = `<label for="v${i}" title="${esc(d.m)}">${esc(d.et || d.m)}</label><div class="campo-u"><input id="v${i}" class="v" type="text" inputmode="decimal" value="${esc(d.v)}" placeholder="?"><span>${esc(unidadDe(d.m))}</span></div><div class="err" hidden></div>`;
+    } else { // dato agregado: medida escrita + valor
+      fila.className = "dato libre";
+      fila.innerHTML = `<input class="m" type="text" list="medidas" value="${esc(d.m)}" placeholder="PQ, ∠QPS, H…" aria-label="Medida"><div class="campo-u"><input class="v" type="text" inputmode="decimal" value="${esc(d.v)}" placeholder="?" aria-label="Valor"><span>${esc(unidadDe(d.m))}</span></div><button class="x" title="Quitar este dato" aria-label="Quitar">×</button><div class="err" hidden></div>`;
+      fila.querySelector(".m").addEventListener("input", e => { st.fig.datos[i].m = e.target.value; fila.querySelector(".campo-u span").textContent = unidadDe(e.target.value); actualizar(); });
+      fila.querySelector(".x").onclick = () => { st.fig.datos.splice(i, 1); pintarDatos(); actualizar(); };
+    }
+    fila.querySelector(".v").addEventListener("input", e => { st.fig.datos[i].v = e.target.value; actualizar(); });
+    cont.appendChild(fila);
+  });
+  // hechos fijos (ángulo recto): a la vista pero sin casilla que se pueda borrar por error
+  $("fijos").innerHTML = fijos.map(i => {
+    const d = st.fig.datos[i], id = idDeTexto(st.fig, d.m), recto = id && esAng(id) && Math.abs(Number(String(d.v).replace(",", ".")) - 90) < 1e-9;
+    return `<span class="chip" title="${esc(d.m)} = ${esc(d.v)}">🔒 ${recto ? "Ángulo recto en " + esc(piezas(id)[1]) : esc(d.et || d.m) + " = " + esc(d.v)}</span>`;
+  }).join("");
+  // Enter pasa a la casilla siguiente
+  const campos = [...document.querySelectorAll("#datos input")];
+  campos.forEach((c, k) => c.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); (campos[k + 1] || document.querySelector("#pide input") || c).focus(); } }));
+  const lista = medidasDeFigura(st.fig).filter(Boolean).map(id => textoParte(nombreDe(st.fig, id, ultimo?.R?.nombres)));
+  if (!$("medidas")) document.body.insertAdjacentHTML("beforeend", '<datalist id="medidas"></datalist>');
+  $("medidas").innerHTML = [...new Set(lista)].map(n => `<option value="${esc(n)}">`).join("");
+}
+$("b-dato").onclick = () => { st.fig.datos.push({ m: "", v: "" }); pintarDatos(); actualizar(); const ms = document.querySelectorAll("#datos .m"); ms[ms.length - 1]?.focus(); };
+
+// ---------- personalizar: puntos, triángulos, rectas, alias
+function renombrar(viejo, nuevo) {
+  nuevo = String(nuevo || "").trim();
+  if (!nuevo || nuevo === viejo) return;
+  if (/[\s|,;=∠]/.test(nuevo)) return avisar("El nombre no puede tener espacios ni , ; = | ∠.");
+  if (st.fig.puntos.includes(nuevo)) return avisar(`Ya hay un punto llamado ${nuevo}.`);
+  const f = st.fig, cambia = n => n === viejo ? nuevo : n;
+  const reescribir = texto => {
+    const t = String(texto || ""), sinAng = t.replace(/∠/g, "").trim();
+    if (!sinAng || Object.values(f.alias || {}).some(a => clave(a) === clave(t))) return t;
+    const orden = [...f.puntos].sort((a, b) => b.length - a.length), trozos = []; let resto = clave(sinAng);
+    while (resto) { const p = orden.find(n => resto.startsWith(n)); if (!p) return t; trozos.push(p); resto = resto.slice(p.length); }
+    return (t.includes("∠") ? "∠" : "") + trozos.map(cambia).join("");
+  };
+  f.datos.forEach(d => { d.m = reescribir(d.m); if (d.et) d.et = d.et.replace(new RegExp(`\\b${viejo}\\b`, "g"), nuevo); });
+  const idNuevo = id => { const q = id.slice(2).split("|").map(cambia); return id[0] === "s" ? "s:" + [q[0], q[1]].sort().join("|") : "a:" + [q[0], q[2]].sort().join("|").replace("|", "|" + q[1] + "|"); };
+  f.alias = Object.fromEntries(Object.entries(f.alias || {}).map(([id, a]) => [idNuevo(id), a]));
+  st.resp = Object.fromEntries(Object.entries(st.resp).map(([id, v]) => [idNuevo(id), v]));
+  st.ver = Object.fromEntries(Object.entries(st.ver).map(([id, v]) => [idNuevo(id), v]));
+  f.puntos = f.puntos.map(cambia); f.triangulos = f.triangulos.map(t => t.map(cambia)); f.rectas = f.rectas.map(r => r.map(cambia));
+  todo();
+}
+function pintarPersonalizar() {
+  $("puntos").innerHTML = st.fig.puntos.map(p => `<input type="text" value="${esc(p)}" data-p="${esc(p)}" aria-label="Nombre del punto ${esc(p)}">`).join("");
+  $("puntos").querySelectorAll("input").forEach(i => i.addEventListener("change", () => renombrar(i.dataset.p, i.value)));
+  $("a-tri").value = st.fig.triangulos.map(t => t.join(t.some(n => n.length > 1) ? " " : "")).join(", ");
+  $("a-rectas").value = st.fig.rectas.map(t => t.join(t.some(n => n.length > 1) ? " " : "")).join(", ");
+  $("a-alias").value = Object.entries(st.fig.alias || {}).map(([id, a]) => `${textoParte(nombreDe({ ...st.fig, alias: {} }, id, null))}=${a}`).join(", ");
+}
+$("lienzo").addEventListener("click", ev => {
+  const c = ev.target.closest("[data-punto]"); if (!c) return;
+  const n = prompt(`Nuevo nombre para ${c.dataset.punto}:`, c.dataset.punto); if (n != null) renombrar(c.dataset.punto, n);
+});
+function leerPersonalizar() {
+  const tri = $("a-tri").value.split(/[,;]/).map(partirPuntos).filter(t => t.length);
+  const rectas = $("a-rectas").value.split(/[,;]/).map(partirPuntos).filter(t => t.length);
+  const malos = tri.filter(t => t.length !== 3 || new Set(t).size !== 3);
+  if (malos.length) return avisar(`Cada triángulo lleva 3 puntos distintos: revisa ${malos.map(t => t.join("")).join(", ")}.`);
+  if (rectas.some(r => r.length < 2 || new Set(r).size !== r.length)) return avisar("Cada recta lleva 2 o más puntos distintos, en orden.");
+  const puntos = [...st.fig.puntos.filter(p => tri.flat().includes(p) || rectas.flat().includes(p))];
+  for (const p of [...tri.flat(), ...rectas.flat()]) if (!puntos.includes(p)) puntos.push(p);
+  const f = { ...st.fig, puntos, triangulos: tri, rectas, alias: {} };
+  for (const par of $("a-alias").value.split(/[,;]/)) {
+    const [m, a] = par.split("="); if (!m || !a || !a.trim()) continue;
+    const id = idDeTexto({ ...f, alias: {} }, m); if (id) f.alias[id] = a.trim(); else avisar(`«${par.trim()}» no corresponde a una medida de la figura.`);
+  }
+  st.fig = f; todo();
+}
+["a-tri", "a-rectas", "a-alias"].forEach(id => $(id).addEventListener("change", leerPersonalizar));
+
+// ---------- respuestas
+function leerRespuestas(R, pos) {
+  const res = new Map(), libres = { noEsta: [], noEntendi: [] };
+  const real = id => R.known.has(id) ? R.known.get(id).v : (pos ? valorGeom(id, pos) : null);
+  const poner = (id, texto) => {
+    if (!String(texto).trim()) return;
+    const v = Number(String(texto).replace(/[\s°]/g, "").replace(",", "."));
+    if (!Number.isFinite(v)) return "no es un número";
+    const x = real(id); res.set(id, { v, ok: x != null && Math.abs(v - x) <= Math.max(0.015, 0.01 * Math.abs(x)) });
+  };
+  for (const [id, t] of Object.entries(st.resp)) poner(id, t);
+  for (const item of String(st.respLibre || "").split(";")) {
+    if (!item.trim()) continue;
+    const par = item.split("="), id = par.length === 2 ? idDeTexto(st.fig, par[0]) : null;
+    if (par.length !== 2 || !par[1].trim()) { libres.noEntendi.push(item.trim()); continue; }
+    if (!id || !pos || !pos[piezas(id)[0]]) { libres.noEsta.push(par[0].trim()); continue; }
+    if (poner(id, par[1])) libres.noEntendi.push(item.trim());
+  }
+  return { res, libres };
+}
+
+// ---------- 3 · resolución
+const pasoVisible = (R, id) => { const k = R.known.get(id); return !!k && (k.origen === "dato" || k.paso < st.pasoVis || !!st.ver[id]); };
+function filaResp(R, RS, id) {
+  const k = R.known.get(id), r = RS.res.get(id), u = OPC.unidad ? " " + OPC.unidad : "";
+  const nom = griegas(aHtml([R.nom(id)]));
+  const ver = r ? (r.ok ? `<span class="bien" title="Bien">✓</span>` : `<span class="mal" title="Por revisar">✗</span>`) : "";
+  const visible = k && pasoVisible(R, id);
+  const valor = !k ? `<span title="Faltan datos para calcularla">— faltan datos</span>` : visible ? "= " + griegas(aHtml([P.r(k.v, esAng(id))])) + (esAng(id) ? "" : u) : "";
+  return `<div class="fila-r" data-id="${id}"><span class="nom">${nom}</span><input type="text" value="${esc(st.resp[id] || "")}" inputmode="decimal" placeholder="tu respuesta" aria-label="Tu respuesta para ${esc(textoParte(R.nom(id)))}"><span class="ver">${ver}</span><button class="ojo" title="${st.ver[id] ? "Ocultar" : "Ver"} solo este valor" aria-label="Ver el valor"${k ? "" : " disabled"}>${st.ver[id] ? "🙈" : "👁"}</button>${valor ? `<span class="val">${valor}</span>` : ""}</div>`;
+}
+function pintarResolucion(R, RS) {
+  const todas = medidasDeFigura(st.fig).filter(id => id && !(R.known.has(id) && R.known.get(id).origen === "dato"));
+  const pedidas = (PLANTILLAS[st.plantilla].pide || []).map(t => idDeTexto(st.fig, t)).filter(id => id && todas.includes(id));
+  const prim = pedidas.length ? pedidas : todas, resto = todas.filter(id => !prim.includes(id));
+  $("pide").innerHTML = prim.map(id => filaResp(R, RS, id)).join("") || `<p class="suave">No quedan incógnitas: todo es dato.</p>`;
+  $("otras-lista").innerHTML = resto.map(id => filaResp(R, RS, id)).join("");
+  $("otras").hidden = !resto.length; $("otras-t").textContent = `Otras medidas (${resto.length})`;
+  document.querySelectorAll(".fila-r").forEach(f => {
+    const id = f.dataset.id;
+    f.querySelector("input").addEventListener("input", e => { st.resp[id] = e.target.value; actualizar(true); });
+    f.querySelector(".ojo").onclick = () => { st.ver[id] = !st.ver[id]; actualizar(); };
+  });
+}
+function pintarPasos(R) {
+  const n = R.pasos.length, k = Math.min(st.pasoVis, n);
+  $("paso-info").textContent = n ? (k === 0 ? `Solución oculta (${n} pasos)` : `Paso ${k} de ${n}`) : "Sin pasos: faltan datos";
+  $("b-ant").disabled = k === 0; $("b-sig").disabled = k >= n; $("b-todo").disabled = k >= n; $("b-ocultar").disabled = k === 0;
+  $("pasos-lista").innerHTML = k ? R.pasos.slice(0, k).map((p, i) => p.regla === "titulo" ? `<h4>${griegas(aHtml(p.p))}</h4>` : `<div class="paso${i >= pasoAntes && i < k && k > pasoAntes ? " nuevo" : ""}">${griegas(aHtml(p.p))}</div>`).join("")
+    : `<p class="suave">Usa ▶ bajo el dibujo para ver el cálculo paso a paso.</p>`;
+  pasoAntes = k;
+}
+const moverPaso = k => { const n = ultimo?.R.pasos.length || 0; st.pasoVis = Math.max(0, Math.min(n, k)); actualizar(); };
+$("b-sig").onclick = () => { let k = st.pasoVis + 1; const pasos = ultimo?.R.pasos || []; while (pasos[k - 1]?.regla === "titulo" && k < pasos.length) k++; moverPaso(k); };
+$("b-ant").onclick = () => { let k = st.pasoVis - 1; const pasos = ultimo?.R.pasos || []; while (k > 0 && pasos[k - 1]?.regla === "titulo") k--; moverPaso(k); };
+$("b-todo").onclick = () => moverPaso(Infinity);
+$("b-ocultar").onclick = () => { st.ver = {}; moverPaso(0); };
+$("resp-libre").addEventListener("input", e => { st.respLibre = e.target.value; actualizar(true); });
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea, select")) return;
+  if (e.key === "ArrowRight") $("b-sig").click(); else if (e.key === "ArrowLeft") $("b-ant").click();
+  else if (e.key === "Escape") cerrarLaterales();
+});
+
+// ---------- ciclo principal
+function calcular() {
+  const R = resolverFigura(st.fig), U = ubicar(st.fig, R.known), p = PLANTILLAS[st.plantilla];
+  let pos = U.pos, boceto = false;
+  if (U.error) {
+    const b = p.boceto, mismos = b && st.fig.puntos.length === p.puntos.length && JSON.stringify(st.fig.triangulos.map(t => t.map(n => st.fig.puntos.indexOf(n)))) === JSON.stringify(p.triangulos.map(t => t.map(n => p.puntos.indexOf(n))));
+    if (mismos) { pos = {}; st.fig.puntos.forEach((n, i) => pos[n] = { x: b[p.puntos[i]][0], y: b[p.puntos[i]][1] }); boceto = true; } else pos = null;
+  }
+  return { R, U, pos, boceto };
+}
+function actualizar(soloRespuestas) {
+  guardar();
+  const C = calcular(), { R, pos } = C; ultimo = C;
+  if (st.pasoVis > R.pasos.length) st.pasoVis = R.pasos.length;
+  // errores de cada dato, junto a su casilla
+  document.querySelectorAll("#datos .dato").forEach(f => {
+    const e = R.filas[+f.dataset.i]?.error, box = f.querySelector(".err");
+    box.hidden = !e; box.textContent = e || ""; f.classList.toggle("con-error", !!e);
+  });
+  const RS = leerRespuestas(R, C.boceto ? null : pos); C.RS = RS;
+  const av = [];
+  R.errores.forEach(e => av.push(`<div class="mal">No se puede resolver: ${esc(e)}</div>`));
+  R.avisos.forEach(a => av.push(`<div class="aviso">${esc(a)}</div>`));
+  if (C.boceto) av.push(`<div class="suave">Boceto sin escala: faltan datos para dibujar la figura real.</div>`);
+  else if (!R.errores.length) { const f = medidasDeFigura(st.fig).filter(id => id && !R.known.has(id)); if (f.length) av.push(`<div class="aviso">Faltan datos para calcular: ${griegas(f.map(id => esc(textoParte(R.nom(id)))).join(", "))}.</div>`); }
+  if (RS.libres.noEsta.length) av.push(`<div class="mal">No están en la figura: ${esc(RS.libres.noEsta.join(", "))}. Lados con dos letras (QS) o su nombre (H); ángulos con tres letras y el vértice al medio (PQS).</div>`);
+  if (RS.libres.noEntendi.length) av.push(`<div class="mal">No entendí: ${esc(RS.libres.noEntendi.join("; "))} (nombre=número; nombre=número).</div>`);
+  $("avisos").innerHTML = griegas(av.join(""));
+  const bien = [...RS.res.values()].filter(r => r.ok).length, mal = RS.res.size - bien;
+  $("marcador").innerHTML = RS.res.size ? `<span class="bien">${bien} ✓</span>${mal ? ` · <span class="mal">${mal} ✗</span>` : ""}` : "";
+  if (pos) {
+    C.dibujo = armarDibujo({ fig: st.fig, R, pos, boceto: C.boceto, resp: RS.res, vis: id => pasoVisible(R, id), metodo: st.metodo !== false,
+      dep: !!st.dep, letra: opc.letra, pregunta: !!PLANTILLAS[st.plantilla].pregunta, plant: PLANTILLAS[st.plantilla] });
+    $("lienzo").innerHTML = aSVG(C.dibujo).svg;
+  } else { C.dibujo = null; $("lienzo").innerHTML = `<p class="suave">Para dibujar hacen falta datos suficientes: al menos un triángulo con 3 datos y un lado.</p>`; }
+  if (soloRespuestas) document.querySelectorAll(".fila-r").forEach(f => { const r = RS.res.get(f.dataset.id); f.querySelector(".ver").innerHTML = r ? (r.ok ? `<span class="bien">✓</span>` : `<span class="mal">✗</span>`) : ""; });
+  else pintarResolucion(R, RS);
+  pintarPasos(R);
+  pintarSalida();
+}
+function todo() { pintarFiguras(); pintarMisFiguras(); pintarOpciones(); pintarDatos(); pintarPersonalizar(); $("resp-libre").value = st.respLibre || ""; pintarNotas(); pasoAntes = st.pasoVis; actualizar(); }
+
+// ---------- salida: copiar a LyX, código, imagen
+const INSTR = {
+  tikz: "Pegar en LyX: Insertar → Vista previa, y adentro Ctrl+L (ERT) → pegar.",
+  plugin: "Pegar en LyX: Insertar → Vista previa, adentro Ctrl+L (ERT) → pegar. Necesita el módulo Triangulo.",
+  latex: "Pegar en LyX: Ctrl+Shift+M (fórmula) → pegar.",
+};
+function comandoPlugin() {
+  const p = PLANTILLAS[st.plantilla]; if (!p.plugin) return null;
+  const f = st.fig, igual = JSON.stringify(f.triangulos.map(t => t.map(n => f.puntos.indexOf(n)))) === JSON.stringify(p.triangulos.map(t => t.map(n => p.puntos.indexOf(n))));
+  if (!igual) return null;
+  const v = txt => { const id = idDeTexto(f, txt); const d = f.datos.find(q => idDeTexto(f, q.m) === id && String(q.v).trim()); return d ? String(d.v).trim() : ""; };
+  const nomb = n => f.puntos[p.puntos.indexOf(n)];
+  const letras = f.puntos.some((n, i) => n !== p.puntos[i]) ? f.puntos.join(",") : "";
+  const R = ultimo?.R, resp = Object.entries(st.resp).filter(([, t]) => String(t).trim()).map(([id, t]) => `${R ? textoParte(R.nom(id)).replace("∠", "") : ""}=${t}`).join("; ");
+  const sol = st.pasoVis > 0 ? "s" : "", dep = st.dep ? "d" : "", ley = String(st.leyenda || "").replace(/([%&#_$])/g, "\\$1");
+  const opcs = `[${letras}][${resp}][${opc.tam || ""}]{${ley}}`;
+  if (p.plugin === "simple") return `\\trianguloLyX{${v("a")}}{${v("b")}}{${v("c")}}{${v("α")}}{${v("β")}}{${v("γ")}}{${sol}}${opcs}`;
+  if (p.plugin === "doble") { if (v("H")) return null; return `\\dobleTrianguloLyX{${v("∠" + nomb("S") + nomb("P") + nomb("Q"))}}{${v("∠" + nomb("S") + nomb("Q") + nomb("R"))}}{${v(nomb("P") + nomb("Q"))}}{${dep}}{${sol}}${opcs}`; }
+  if (p.plugin === "triple") return `\\tripleTrianguloLyX{${v("∠" + nomb("T") + nomb("P") + nomb("Q"))}}{${v("∠" + nomb("T") + nomb("Q") + nomb("R"))}}{${v("∠" + nomb("T") + nomb("R") + nomb("S"))}}{${v(nomb("P") + nomb("Q"))}}{${dep}}{${sol}}${opcs}`;
+  return null;
+}
+function desarrolloLatex() {
+  const R = ultimo?.R; if (!R || !R.pasos.length) return "";
+  return "\\begin{array}{l}\n" + R.pasos.slice(0, st.pasoVis || R.pasos.length).map(p => aTex(p.p)).join(" \\\\\n") + "\n\\end{array}";
+}
+function codigoSalida() {
+  if (opc.exp === "plugin") return comandoPlugin();
+  if (opc.exp === "latex") return desarrolloLatex() || null;
+  if (!ultimo?.dibujo) return null;
+  let t = aTikZ(ultimo.dibujo, 10 * ((Number(String(opc.tam).replace(",", ".")) || 100) / 100));
+  if (st.leyenda) t = `\\begin{tabular}{c}\n${t}\\\\\n${String(st.leyenda).replace(/([%&#_$])/g, "\\$1")}\n\\end{tabular}`;
+  return t;
+}
+function pintarSalida() {
+  const c = codigoSalida();
+  $("instr").textContent = c ? INSTR[opc.exp] : opc.exp === "plugin" ? "El plugin solo hace el triángulo, el doble y el triple (sin la altura como dato): elige «dibujo (TikZ)»." : "Faltan datos para generar esto.";
+  $("b-copiar").disabled = !c;
+  $("codigo").value = c || ""; $("codigo-instr").textContent = $("instr").textContent;
+}
+async function copiar() {
+  const t = codigoSalida(); if (!t) return;
+  let ok = false;
+  try { await navigator.clipboard.writeText(t); ok = true; } catch (_) { abrirLateral("l-codigo"); $("codigo").select(); try { ok = document.execCommand("copy"); } catch (_) {} }
+  avisar(ok ? "Copiado ✓ " + INSTR[opc.exp] : "No pude copiar solo: el código está seleccionado, usa Ctrl+C.");
+}
+$("b-copiar").onclick = copiar; $("b-copiar2").onclick = copiar;
+$("b-codigo").onclick = () => abrirLateral("l-codigo");
+function bajar(nombre, blob) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+const FUENTE = '"Latin Modern Roman", "STIX Two Text", Cambria, Georgia, serif';
+const medidor = document.createElement("canvas").getContext("2d");
+const anchoTexto = (t, tam) => { medidor.font = `${tam}px ${FUENTE}`; return medidor.measureText(t).width; };
+function trozosHtml(nodo, tam) {
+  const out = [];
+  nodo.childNodes.forEach(h => {
+    if (h.nodeType === 3) { if (h.nodeValue) out.push({ t: h.nodeValue.replace(/\u00a0/g, " "), tam }); return; }
+    if (h.nodeType !== 1) return;
+    if (h.classList.contains("fr")) out.push({ fr: [trozosHtml(h.children[0], tam - 1), trozosHtml(h.children[1], tam - 1)] });
+    else { const sub = trozosHtml(h, h.classList.contains("griega") ? tam + 2 : tam); if (h.classList.contains("ol")) sub.forEach(x => x.ol = true); if (h.tagName === "B") sub.forEach(x => x.b = true); out.push(...sub); }
+  });
+  return out;
+}
+const anchoTr = ts => ts.reduce((a, x) => a + (x.fr ? Math.max(anchoTr(x.fr[0]), anchoTr(x.fr[1])) + 8 : anchoTexto(x.t, x.tam)), 0);
+function svgTr(ts, x, y) {
+  let s = "";
+  for (const z of ts) {
+    if (z.fr) { const wn = anchoTr(z.fr[0]), wd = anchoTr(z.fr[1]), w = Math.max(wn, wd) + 8; s += svgTr(z.fr[0], x + (w - wn) / 2, y - 9) + svgTr(z.fr[1], x + (w - wd) / 2, y + 15) + `<line x1="${x + 2}" y1="${y - 3}" x2="${x + w - 2}" y2="${y - 3}" stroke="#1d1d1b"/>`; x += w; }
+    else { s += `<text x="${x}" y="${y}" font-size="${z.tam}" fill="#1d1d1b"${z.ol ? ' text-decoration="overline"' : ""}${z.b ? ' font-weight="bold"' : ""} style="white-space:pre">${esc(z.t)}</text>`; x += anchoTexto(z.t, z.tam); }
+  }
+  return s;
+}
+function imagenSalida() {
+  if (!ultimo?.dibujo) return null;
+  const base = aSVG(ultimo.dibujo), interior = base.svg.replace(/^<svg[^>]*>/, "").replace(/<\/svg>$/, "");
+  const lineas = [];
+  if (st.leyenda) lineas.push({ html: esc(st.leyenda), tam: 16 });
+  if (opc.conDes && ultimo.R.pasos.length) { lineas.push({ html: "<b>Desarrollo</b>", tam: 16 }); ultimo.R.pasos.forEach(p => lineas.push({ html: griegas(aHtml(p.p)), tam: 16 })); }
+  let y = base.H + 6, cuerpo = "", ancho = base.W;
+  const div = document.createElement("div");
+  for (const l of lineas) { div.innerHTML = l.html; const ts = trozosHtml(div, l.tam), fr = ts.some(z => z.fr); y += fr ? 32 : 22; cuerpo += svgTr(ts, 24, y); ancho = Math.max(ancho, anchoTr(ts) + 48); y += fr ? 14 : 4; }
+  const alto = Math.ceil(y + 14); ancho = Math.ceil(ancho);
+  return { txt: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${ancho} ${alto}" width="${ancho}" height="${alto}" font-family='${FUENTE}'><rect width="100%" height="100%" fill="#fff"/>${interior}<g>${cuerpo}</g></svg>`, w: ancho, h: alto };
+}
+$("b-svg").onclick = () => { const e = imagenSalida(); if (!e) return avisar("No hay dibujo que descargar."); bajar("triangulo.svg", new Blob([e.txt], { type: "image/svg+xml" })); };
+$("b-png").onclick = () => {
+  const e = imagenSalida(); if (!e) return avisar("No hay dibujo que descargar.");
+  const img = new Image(), z = 3;
+  img.onload = () => { const cv = document.createElement("canvas"); cv.width = e.w * z; cv.height = e.h * z; const cx = cv.getContext("2d"); cx.scale(z, z); cx.drawImage(img, 0, 0); cv.toBlob(b => bajar("triangulo.png", b), "image/png"); };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(e.txt);
+};
+
+// ---------- paneles laterales
+function abrirLateral(id) { cerrarLaterales(); $(id).classList.add("abierto"); $(id).querySelector("button, textarea, input")?.focus(); }
+function cerrarLaterales() { document.querySelectorAll(".lateral.abierto").forEach(l => l.classList.remove("abierto")); }
+document.querySelectorAll("[data-cerrar]").forEach(b => b.onclick = cerrarLaterales);
+$("b-formulas").onclick = () => abrirLateral("l-formulas");
+$("b-notas").onclick = () => abrirLateral("l-notas");
+
+// ---------- notas (van con la figura)
+function pintarNotas() {
+  if (!Array.isArray(st.notas) || !st.notas.length) st.notas = [{ titulo: "Nota 1", texto: "" }];
+  notaActiva = Math.min(notaActiva, st.notas.length - 1);
+  const cont = $("lista-notas"); cont.innerHTML = "";
+  st.notas.forEach((n, i) => {
+    const d = document.createElement("div"); d.className = "nota" + (i === notaActiva ? " activa" : "");
+    d.innerHTML = `<div class="cab"><input type="text" aria-label="Título de la nota"><button class="borrar" title="Borrar nota">Borrar</button></div><textarea aria-label="Texto de la nota" placeholder="Escribe aquí…"></textarea>`;
+    const [ti, ta] = [d.querySelector("input"), d.querySelector("textarea")];
+    ti.value = n.titulo; ta.value = n.texto;
+    const activar = () => { notaActiva = i; cont.querySelectorAll(".nota").forEach((x, j) => x.classList.toggle("activa", j === i)); };
+    ti.addEventListener("focus", activar); ta.addEventListener("focus", activar);
+    ti.oninput = () => { n.titulo = ti.value; guardar(); }; ta.oninput = () => { n.texto = ta.value; guardar(); };
+    d.querySelector(".borrar").onclick = () => { if ((n.texto.trim() || n.titulo.trim()) && !confirm(`¿Borrar «${n.titulo || "sin título"}»?`)) return; st.notas.splice(i, 1); guardar(); pintarNotas(); };
+    cont.appendChild(d);
+  });
+  const conTexto = st.notas.filter(n => n.texto.trim()).length;
+  $("b-notas").textContent = conTexto ? `📝 Notas (${conTexto})` : "📝 Notas";
+}
+$("b-nota").onclick = () => { st.notas.push({ titulo: "Nota " + (st.notas.length + 1), texto: "" }); notaActiva = st.notas.length - 1; guardar(); pintarNotas(); };
+$("b-anotar").onclick = () => {
+  const C = ultimo; if (!C) return;
+  const u = OPC.unidad ? " " + OPC.unidad : "";
+  const datos = st.fig.datos.filter(x => String(x.v).trim()).map(x => `${x.et || x.m}=${x.v}`).join(", ");
+  const res = medidasDeFigura(st.fig).filter(id => id && C.R.known.has(id) && C.R.known.get(id).origen !== "dato").map(id => `${textoParte(C.R.nom(id))} = ${fmt(C.R.known.get(id).v)}${esAng(id) ? "°" : u}`).join(", ");
+  const n = st.notas[notaActiva];
+  n.texto = (n.texto.trim() ? n.texto.replace(/\s*$/, "") + "\n\n" : "") + `${PLANTILLAS[st.plantilla].nombre}${st.nombre ? " «" + st.nombre + "»" : ""}\n  Datos: ${datos || "—"}\n  Resultados: ${res || "faltan datos"}`;
+  guardar(); pintarNotas(); avisar(`Agregado a «${n.titulo}».`);
+};
+$("b-notas-md").onclick = () => bajar("notas_triangulos.md", new Blob([st.notas.map(n => `## ${n.titulo}\n\n${n.texto}\n`).join("\n")], { type: "text/markdown" }));
+
+function griegasEnPagina(raiz) {
+  const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT), nodos = [];
+  while (w.nextNode()) if (/[αβγθ]/.test(w.currentNode.nodeValue) && !w.currentNode.parentElement.closest("input,textarea,script,style,svg,.griega")) nodos.push(w.currentNode);
+  for (const t of nodos) { const sp = document.createElement("span"); sp.innerHTML = griegas(esc(t.nodeValue)); t.replaceWith(...sp.childNodes); }
+}
+griegasEnPagina($("plegable"));
+todo();
+// ============================================================ FIN INTERFAZ
+
+</script>
+</body>
+</html>
