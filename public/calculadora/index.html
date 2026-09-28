@@ -230,7 +230,7 @@ const CTRL = [
 ];
 const TECLADOS = {
   general: ["General", [
-    ["x⁻¹", "^(−1)", "x!", "!"], ["nCr", "comb(", "nPr", "perm("], ["√", "√(", "∛", "cbrt("],
+    ["x⁻¹", "^(−1)", "x!", "!"], ["▭/▭", "@frac"], ["√", "√(", "∛", "cbrt("],
     ["x²", "^2", "x³", "^3"], ["^", "^", "ˣ√", "root("], ["log", "log10(", "10ˣ", "10^"],
     ["ln", "ln(", "eˣ", "e^"], ["unid", "@unidad", "(−)", "−"], ["hyp", "@hyp", "", "", "k-hyp"],
     ["sin", "sin(", "sin⁻¹", "asin("], ["cos", "cos(", "cos⁻¹", "acos("], ["tan", "tan(", "tan⁻¹", "atan("],
@@ -249,9 +249,10 @@ const TECLADOS = {
 };
 let teclado = leer("calc-teclado", "general");
 if (!TECLADOS[teclado] && teclado !== "oculto") teclado = "general";
+let tecladoSistema = leer("calc-teclado-sistema", false); // teclado del celular al tocar la pantalla; apagado = solo las teclas de la calculadora
 const N = [
   ["7", "7"], ["8", "8"], ["9", "9"], ["DEL", "@del", "", "", "rojo"], ["AC", "@ac", "", "", "rojo"],
-  ["4", "4"], ["5", "5"], ["6", "6"], ["×", "×", "", "", "ope"], ["÷", "/", "", "", "ope"],
+  ["4", "4"], ["5", "5"], ["6", "6"], ["×", "×", "nCr", "comb(", "ope"], ["÷", "÷", "nPr", "perm(", "ope"],
   ["1", "1"], ["2", "2"], ["3", "3"], ["+", "+", "", "", "ope"], ["−", "−", "", "", "ope"],
   ["0", "0"], [",", "@decimal", "Rnd", "round("], ["EXP", "E", "Ran#", "rand()"], ["Ans", "Ans", "", "", "ope"], ["=", "@igual", "", "", "ope"],
 ];
@@ -271,6 +272,7 @@ function pintarTeclas(cont, lista) {
 }
 function pintarTeclados() {
   casio.classList.toggle("sin-teclado", teclado === "oculto");
+  entrada.inputMode = tecladoSistema ? "text" : "none"; // "none": el campo toma foco y cursor, pero el celular no abre su teclado
   pintarTeclas($("teclas-ctrl"), CTRL);
   pintarTeclas($("teclas-f"), (TECLADOS[teclado] || TECLADOS.general)[1]);
   pintarTeclas($("teclas-n"), N);
@@ -285,7 +287,7 @@ function estado() {
 }
 let recien = false; // tras "=": un operador sigue desde Ans, cualquier otra cosa reemplaza (como la Casio)
 function insertar(txt) {
-  if (recien && /^[+−\-×*\/^!%&|<>]/.test(txt)) entrada.value = "Ans";
+  if (recien && /^[+−\-×*\/÷^!%&|<>]/.test(txt)) entrada.value = "Ans";
   recien = false;
   const s = entrada.selectionStart ?? entrada.value.length, e = entrada.selectionEnd ?? s;
   if ((txt === " " || txt === ")") && s === e && cierraExponente(s)) return entrada.setSelectionRange(s + 1, s + 1);
@@ -309,7 +311,14 @@ function borrarAtras() {
   if (/^[\^_]\(\)$/.test(v.slice(s - 2, s + 1))) return entrada.setRangeText("", s - 2, s + 1, "end");
   if (s > 0) entrada.setRangeText("", s - 1, s, "end");
 }
-function mover(d) { const p = Math.max(0, Math.min(entrada.value.length, entrada.selectionStart + d)); entrada.setSelectionRange(p, p); }
+function mover(d, saltar) { // saltar (▶/◀): si el paso cruzó un carácter oculto («)/(» de una fracción, «^(»), sigue hasta el próximo visible
+  pintarVista();
+  const v = entrada.value, oculto = k => k >= 0 && k < v.length && vista.querySelector(`[data-i="${k}"]`)?.textContent === "";
+  let p = entrada.selectionStart;
+  const paso = () => { const k = d > 0 ? p : p - 1; p = Math.max(0, Math.min(v.length, p + d)); return k; };
+  if (oculto(paso()) && saltar) while (oculto(d > 0 ? p : p - 1)) paso();
+  entrada.setSelectionRange(p, p);
+}
 function tecla(ins, sins) {
   if (ins === "@shift") { shift = !shift; return estado(); }
   if (ins === "@hyp") { hyp = !hyp; return estado(); }
@@ -319,12 +328,13 @@ function tecla(ins, sins) {
   estado();
   switch (txt) {
     case "@drg": return cambiarModo("angle", { 2: "1", 1: "3", 3: "2" }[modo.angle]);
-    case "@izq": return mover(-1);
-    case "@der": return mover(1);
+    case "@izq": return mover(-1, true);
+    case "@der": return mover(1, true);
     case "@arriba": return navegar(-1);
     case "@abajo": return navegar(1);
     case "@decimal": return insertar(coma() ? "," : ".");
     case "@del": return borrarAtras();
+    case "@frac": insertar("(()/())"); return mover(-5); // como ■/□ de la Casio; el paréntesis de afuera hace que lo que sigue multiplique la fracción entera
     case "@ac": entrada.value = ""; resultado.textContent = "0"; resultado.classList.remove("chico"); aviso.textContent = ""; return;
     case "@igual": return calcular();
     case "@unidad": return q ? MENUS.unidades() : null;
@@ -351,7 +361,7 @@ function arbol(s) {
         const unidad = base.t === "txt" && NUM.test(s[base.a]) && esUnidad(nombre);
         out.push({ t: unidad ? "unidad" : "sub", base, op, sub });
       }
-      else if (c === "/" || c === "∕") { const op = i++; out.push({ t: "frac", num: out.pop() || { t: "hueco", i: op }, op, den: atomoConPotencia() }); }
+      else if (c === "/" || c === "∕") { const op = i++; out.push({ t: "frac", num: out.pop() || { t: "hueco", i: op }, op, den: factores() }); }
       else out.push(atomo());
     }
     return out;
@@ -364,7 +374,7 @@ function arbol(s) {
     if (LETRA.test(c)) {
       while (i < s.length && NOMBRE.test(s[i])) i++;
       const nombre = { t: "txt", a, b: i };
-      return s[i] === "(" ? { t: "fn", nombre, arg: atomo() } : nombre;
+      return s[i] === "(" ? { t: "fn", nombre, arg: { ...atomo(), fn: true } } : nombre;
     }
     i++; return { t: "txt", a, b: i };
   }
@@ -372,6 +382,12 @@ function arbol(s) {
     let n = atomo();
     while (s[i] === "^") { const op = i++; n = { t: "pot", base: n, op, exp: atomo() }; }
     return n;
+  }
+  function factores() { // lo pegado sin espacio ni operador (2x, 2π, 2(x+1)) multiplica antes que «/»: así lo lee Qalculate
+    // ponytail: solo el denominador; el numerador toma el último átomo (2x/4 = 2·x/4, mismo valor), ampliarlo si confunde
+    const hijos = [atomoConPotencia()];
+    while (i < s.length && /[\p{L}\p{N}.,°π∞(]/u.test(s[i])) hijos.push(atomoConPotencia());
+    return hijos.length > 1 ? { t: "seq", hijos } : hijos[0];
   }
   return secuencia(false);
 }
@@ -384,9 +400,11 @@ function dibujar(s, nodos) {
       case "hueco": return `<span class="hueco" data-h="${x.i}"></span>`;
       case "grupo": {
         const dentro = x.hijos.map(h => n(h)).join("") || (sinParentesis ? `<span class="hueco" data-h="${x.a + 1}"></span>` : "");
+        if (!x.fn && x.b != null && x.hijos.length === 1 && x.hijos[0].t === "frac") sinParentesis = true; // (a/b): la raya ya agrupa
         return sinParentesis ? oculto(x.a) + dentro + oculto(x.b) : car(x.a) + dentro + (x.b != null ? car(x.b) : "");
       }
       case "fn": return n(x.nombre) + n(x.arg);
+      case "seq": return x.hijos.map(h => n(h)).join("");
       case "pot": return n(x.base) + oculto(x.op) + `<sup>${n(x.exp, true)}</sup>`;
       case "sub": return n(x.base) + oculto(x.op) + `<sub>${n(x.sub, true)}</sub>`;
       case "unidad": return n(x.base) + oculto(x.op) + `<span class="unid">${n(x.sub, true)}</span>`;
@@ -699,10 +717,13 @@ const MENUS = {
   teclado() {
     abrir("Teclado", Object.entries(TECLADOS).map(([k, [t]]) => `<button class="bot${teclado === k ? " pri" : ""}" data-k="${k}">${t}</button>`).join("")
       + `<button class="bot${teclado === "oculto" ? " pri" : ""}" data-k="oculto">Ocultar teclado</button>
+      <button class="bot${tecladoSistema ? " pri" : ""}" id="k-sistema">Teclado del celular: ${tecladoSistema ? "sí" : "no"}</button>
+      <p class="nota">Teclado del celular: si está en «no», tocar la pantalla solo mueve el cursor y se escribe con las teclas de la calculadora. En el computador el teclado físico funciona igual.</p>
       <p class="nota">General es el de la Casio. Programación: dígitos A–F, operaciones de bits y conversión de base. Álgebra: incógnitas, resolver, derivar, integrar, límites y sumatorias.</p>`);
     cuerpo.querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
       teclado = b.dataset.k; guardar("calc-teclado", teclado); pintarTeclados(); MENUS.teclado();
     });
+    $("k-sistema").onclick = () => { tecladoSistema = !tecladoSistema; guardar("calc-teclado-sistema", tecladoSistema); pintarTeclados(); MENUS.teclado(); };
   },
 
   menu() {
