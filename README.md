@@ -19,7 +19,7 @@ Herramientas propias, abiertas en **https://tools.obsedium.cl** (repo público).
 
 ## Taller de triángulos
 
-Su fuente de verdad es `~/Documentos/Clase/Semestre_II/02_Matrices/Trigonometria/Taller_Triangulos.html`.
+Su fuente de verdad es `~/Documentos/Clase/Semestre_II/02_Matrices/Trigonometria/04_Herramientas/Taller_Triangulos.html`.
 Para publicar un cambio: `./sincronizar_taller.sh` (copia, agrega el «←» al índice, commitea y pushea;
 `--sin-push` solo copia).
 

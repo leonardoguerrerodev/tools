@@ -5,7 +5,7 @@
 #      ./sincronizar_taller.sh --sin-push  solo copia (para revisar con git diff antes)
 set -euo pipefail
 AQUI="$(cd "$(dirname "$0")" && pwd)"
-FUENTE="$HOME/Documentos/Clase/Semestre_II/02_Matrices/Trigonometria/Taller_Triangulos.html"
+FUENTE="$HOME/Documentos/Clase/Semestre_II/02_Matrices/Trigonometria/04_Herramientas/Taller_Triangulos.html"
 DESTINO="$AQUI/public/taller-triangulos/index.html"
 
 [ -f "$FUENTE" ] || { echo "No encuentro el taller en: $FUENTE" >&2; exit 1; }
